@@ -243,3 +243,7 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+
+# NoCommit CommentViewer Library
+/lib/NicoViewer/*.dll
+/lib/NiconamaCommentViewer/*.dll
