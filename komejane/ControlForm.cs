@@ -33,24 +33,29 @@ namespace Komejane
 
     public void updateServerStatus()
     {
-      Config conf = Config.Instance;
-
-      if (Komejane.isRun)
+      if (txtUrlSample.InvokeRequired)
       {
-        txtUrlSample.Text = "http://" + conf.ListenHost + ":" + conf.Port;
-        txtUrlSample.Enabled = true;
+        Invoke(new Action(() => {
+          Config conf = Config.Instance;
 
-        btnServRun.Text = "サーバ再起動";
-        btnServStop.Enabled = true;
-      }
-      else
-      {
-        btnServStop.Enabled = false;
+          if (Komejane.isRun)
+          {
+            txtUrlSample.Text = "http://" + conf.ListenHost + ":" + conf.Port;
+            txtUrlSample.Enabled = true;
 
-        txtUrlSample.Enabled = false;
-        txtUrlSample.Text = "停止中…";
+            btnServRun.Text = "サーバ再起動";
+            btnServStop.Enabled = true;
+          }
+          else
+          {
+            btnServStop.Enabled = false;
 
-        btnServRun.Text = "サーバ起動";
+            txtUrlSample.Enabled = false;
+            txtUrlSample.Text = "停止中…";
+
+            btnServRun.Text = "サーバ起動";
+          }
+        }));
       }
     }
 
