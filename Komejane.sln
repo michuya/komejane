@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "anko_plugin", "ankome\anko_plugin.csproj", "{3F5A53D3-F1FF-4050-9444-787E5A199AA5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "anko_plugin", "anko_plugin\anko_plugin.csproj", "{3F5A53D3-F1FF-4050-9444-787E5A199AA5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ncv_plugin", "ncv_plugin\ncv_plugin.csproj", "{A7535013-2CF7-4681-A482-61BEA03FF567}"
 EndProject

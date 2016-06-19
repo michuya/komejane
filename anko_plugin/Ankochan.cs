@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ankoPlugin2;
 
-namespace ankome
+namespace anko_plugin
 {
   public class Ankochan : ankoPlugin2.IPlugin
   {
