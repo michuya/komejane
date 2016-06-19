@@ -7,11 +7,9 @@ using ankoPlugin2;
 
 namespace ankome
 {
-    public class Komejane : ankoPlugin2.IPlugin
+    public class Ankochan : ankoPlugin2.IPlugin
     {
-        String pluginName = "こめじゃね";
-        String pluginDescription = "OBS CLR Plugin/Obs Studio Browser Plugin用HTML5コメントジェネレータ";
-
+        Komejane.Komejane komejane = new Komejane.Komejane();
         ankoPlugin2.IPluginHost _host = null;
 
         public IPluginHost host
@@ -31,7 +29,7 @@ namespace ankome
         {
             get
             {
-                return this.pluginDescription;
+                return Komejane.Komejane.Description + "\nアンコちゃん Ver.";
             }
         }
 
@@ -47,13 +45,13 @@ namespace ankome
         {
             get
             {
-                return this.pluginName;
+                return Komejane.Komejane.Name;
             }
         }
 
         public void Run()
         {
-            // 鯖インスタンスを起動
+            // TODO: 鯖インスタンスを起動
         }
     }
 }

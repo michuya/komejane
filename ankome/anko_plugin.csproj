@@ -7,8 +7,8 @@
     <ProjectGuid>{3F5A53D3-F1FF-4050-9444-787E5A199AA5}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ankome</RootNamespace>
-    <AssemblyName>ankome</AssemblyName>
+    <RootNamespace>anko_plugin</RootNamespace>
+    <AssemblyName>anko_plugin</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -30,11 +30,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ankoPlugin2">
-      <HintPath>E:\appz\NicoViewer\ankoPlugin2.dll</HintPath>
+    <Reference Include="ankoPlugin2, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\NicoViewer\ankoPlugin2.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="LibAnko">
-      <HintPath>E:\appz\NicoViewer\LibAnko.dll</HintPath>
+    <Reference Include="LibAnko, Version=2.0.35.2, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\lib\NicoViewer\LibAnko.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -46,10 +50,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Komejane.cs" />
+    <Compile Include="Ankochan.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\komejane\komejane.csproj">
+      <Project>{ae3678ec-6a62-484b-a054-368d25d6a858}</Project>
+      <Name>komejane</Name>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>"C:\Program Files (x86)\Microsoft\ILMerge\ILMerge.exe" /ndebug /out:$(SolutionName).dll $(TargetFileName) komejane_common.dll
+</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
