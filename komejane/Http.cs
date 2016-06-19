@@ -10,6 +10,15 @@ using System.Threading.Tasks;
 
 namespace Komejane
 {
+  public class HttpExceptionEventArgs : EventArgs
+  {
+    public HttpListenerException Exception { get; private set; }
+    public HttpExceptionEventArgs(HttpListenerException ex)
+    {
+      Exception = ex;
+    }
+  }
+
   public sealed class Http
   {
     /* --------------------------------------------------------------------- */
@@ -30,6 +39,7 @@ namespace Komejane
     /* --------------------------------------------------------------------- */
     public event EventHandler ServerStarted;
     public event EventHandler ServerStop;
+    public event EventHandler ServerError;
 
     private void OnServerStarted(EventArgs e)
     {
@@ -40,6 +50,11 @@ namespace Komejane
     {
       if (ServerStop != null)
         ServerStop(this, e);
+    }
+    private void OnServerError(HttpExceptionEventArgs e)
+    {
+      if (ServerError != null)
+        ServerError(this, e);
     }
     /* --------------------------------------------------------------------- */
     #endregion
@@ -72,10 +87,12 @@ namespace Komejane
         {
           if (ex.SocketErrorCode == SocketError.ConnectionRefused)
           {
+            System.Diagnostics.Debug.WriteLine("isServerSocketListening = false");
             return false;
           }
         }
 
+        System.Diagnostics.Debug.WriteLine("isServerSocketListening = true");
         return true;
       }
     }
@@ -90,18 +107,39 @@ namespace Komejane
         server = new HttpListener();
 
       // 接続元設定を適用
-      server.Prefixes.Add(prefix);
+      try
+      {
+        server.Prefixes.Add(prefix);
+      }
+      catch (HttpListenerException ex)
+      {
+        System.Diagnostics.Debug.WriteLine(ex.ToString());
+        OnServerError(new HttpExceptionEventArgs(ex));
+      }
       server.Start();
 
       OnServerStarted(new EventArgs());
     }
 
-    public void serverStop()
+    public async void serverStop()
     {
       if (server == null || !server.IsListening) return;
 
       server.Stop();
-      OnServerStop(new EventArgs());
+
+      await Task.Run(() =>
+      {
+        while (true)
+        {
+          if (!isServerSocketListening())
+          {
+            OnServerStop(new EventArgs());
+            break;
+          }
+
+          System.Threading.Thread.Sleep(5);
+        }
+      });
     }
 
     public async void serverRestart()
@@ -117,7 +155,12 @@ namespace Komejane
           while (true)
           {
             if (!isServerSocketListening())
+            {
               serverStart();
+              break;
+            }
+
+            System.Threading.Thread.Sleep(5);
           }
         }
         else
