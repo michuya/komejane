@@ -97,7 +97,7 @@ namespace Komejane
       }
     }
 
-    public void serverStart()
+    public async void serverStart()
     {
       Config conf = Config.Instance;
 
@@ -118,7 +118,20 @@ namespace Komejane
       }
       server.Start();
 
-      OnServerStarted(new EventArgs());
+      await Task.Run(() =>
+      {
+        while (true)
+        {
+          if (isServerSocketListening())
+          {
+            OnServerStarted(new EventArgs());
+            break;
+          }
+
+          System.Threading.Thread.Sleep(5);
+        }
+      });
+
     }
 
     public async void serverStop()
