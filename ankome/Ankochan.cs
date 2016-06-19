@@ -7,51 +7,51 @@ using ankoPlugin2;
 
 namespace ankome
 {
-    public class Ankochan : ankoPlugin2.IPlugin
+  public class Ankochan : ankoPlugin2.IPlugin
+  {
+    Komejane.Komejane komejane = new Komejane.Komejane();
+    ankoPlugin2.IPluginHost _host = null;
+
+    public IPluginHost host
     {
-        Komejane.Komejane komejane = new Komejane.Komejane();
-        ankoPlugin2.IPluginHost _host = null;
+      get
+      {
+        return this._host;
+      }
 
-        public IPluginHost host
-        {
-            get
-            {
-                return this._host;
-            }
-
-            set
-            {
-                this._host = value;
-            }
-        }
-
-        public string Description
-        {
-            get
-            {
-                return Komejane.Komejane.Description + "\nアンコちゃん Ver.";
-            }
-        }
-
-        public bool IsAlive
-        {
-            get
-            {
-                return false;
-            }
-        }
-
-        public string Name
-        {
-            get
-            {
-                return Komejane.Komejane.Name;
-            }
-        }
-
-        public void Run()
-        {
-            // TODO: 鯖インスタンスを起動
-        }
+      set
+      {
+        this._host = value;
+      }
     }
+
+    public string Description
+    {
+      get
+      {
+        return Komejane.Komejane.Description + "\nアンコちゃん Ver.";
+      }
+    }
+
+    public bool IsAlive
+    {
+      get
+      {
+        return false;
+      }
+    }
+
+    public string Name
+    {
+      get
+      {
+        return Komejane.Komejane.Name;
+      }
+    }
+
+    public void Run()
+    {
+      // TODO: 鯖インスタンスを起動
+    }
+  }
 }
