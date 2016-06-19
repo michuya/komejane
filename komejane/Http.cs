@@ -25,6 +25,26 @@ namespace Komejane
     #endregion
     /* --------------------------------------------------------------------- */
 
+    /* --------------------------------------------------------------------- */
+    #region イベント関係
+    /* --------------------------------------------------------------------- */
+    public event EventHandler ServerStarted;
+    public event EventHandler ServerStop;
+
+    private void OnServerStarted(EventArgs e)
+    {
+      if (ServerStarted != null)
+        ServerStarted(this, e);
+    }
+    private void OnServerStop(EventArgs e)
+    {
+      if (ServerStop != null)
+        ServerStop(this, e);
+    }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
+
     public static bool isRun
     {
       get { return (instance != null && instance.isServerRun); }
@@ -34,9 +54,7 @@ namespace Komejane
 
     private Http()
     {
-      Config conf = Config.Instance;
 
-      string prefix = "http://" + conf.ListenHost + ":" + conf.Port + "/";
 
     }
 
@@ -48,7 +66,7 @@ namespace Komejane
       {
         try
         {
-          socket.Connect("127.0.0.1", conf.Port);
+          socket.Connect(conf.ListenHost, conf.Port);
         }
         catch (SocketException ex)
         {
@@ -62,14 +80,32 @@ namespace Komejane
       }
     }
 
-    private async void serverReload()
+    public void serverStart()
     {
-      Action serverStart = () =>
-      {
-        server = new HttpListener();
-        server.Start();
-      };
+      Config conf = Config.Instance;
 
+      string prefix = "http://" + conf.ListenHost + ":" + conf.Port + "/";
+
+      if (server == null)
+        server = new HttpListener();
+
+      // 接続元設定を適用
+      server.Prefixes.Add(prefix);
+      server.Start();
+
+      OnServerStarted(new EventArgs());
+    }
+
+    public void serverStop()
+    {
+      if (server == null || !server.IsListening) return;
+
+      server.Stop();
+      OnServerStop(new EventArgs());
+    }
+
+    public async void serverRestart()
+    {
       await Task.Run(() =>
       {
         if (server != null)

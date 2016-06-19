@@ -8,6 +8,9 @@ namespace Komejane
 {
   public class Komejane
   {
+    /* --------------------------------------------------------------------- */
+    #region プラグイン定数とかステータスとか
+    /* --------------------------------------------------------------------- */
     static public String Version
     {
       get { return "0.0.1"; }
@@ -26,6 +29,32 @@ namespace Komejane
     static public bool isRun
     {
       get { return Http.isRun; }
+    }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
+
+    public System.Windows.Forms.Form WindowOwner { get; set; }
+
+    public Komejane()
+    {
+
+    }
+
+    public void Run(bool isShowWindow = true)
+    {
+      Http server = Http.Instance;
+
+      if (isShowWindow)
+      {
+        ControlForm form = new ControlForm();
+        form.ShowDialog();
+      }
+    }
+
+    public void Stop()
+    {
+      Http server = Http.Instance;
     }
   }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using ankoPlugin2;
 
 namespace anko_plugin
@@ -52,6 +53,8 @@ namespace anko_plugin
     public void Run()
     {
       // TODO: 鯖インスタンスを起動
+      komejane.WindowOwner = (System.Windows.Forms.Form)_host.Win32WindowOwner;
+      komejane.Run();
     }
   }
 }
