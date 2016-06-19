@@ -68,7 +68,7 @@ namespace Komejane
     {
       Http server = Http.Instance;
 
-      if (btnClose.Enabled)
+      if (btnServStop.Enabled)
         server.serverRestart();
       else
         server.serverStart();
