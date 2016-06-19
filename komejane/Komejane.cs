@@ -22,5 +22,10 @@ namespace Komejane
         {
             get { return "OBS CLR Plugin/Obs Studio Browser Plugin用HTML5コメントジェネレータ"; }
         }
+
+        static public bool isRun
+        {
+            get { return Http.isRun; }
+        }
     }
 }
