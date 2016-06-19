@@ -7,12 +7,18 @@ namespace Komejane
 {
   public sealed class Config
   {
+    /* --------------------------------------------------------------------- */
+    #region シングルトン関係
+    /* --------------------------------------------------------------------- */
     private static Config instance = new Config();
 
     public static Config Instance
     {
       get { return instance; }
     }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
 
     private Config()
     {

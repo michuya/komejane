@@ -12,12 +12,18 @@ namespace Komejane
 {
   public sealed class Http
   {
+    /* --------------------------------------------------------------------- */
+    #region シングルトン関係
+    /* --------------------------------------------------------------------- */
     private static Http instance = new Http();
 
     public static Http Instance
     {
       get { return instance; }
     }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
 
     public static bool isRun
     {
