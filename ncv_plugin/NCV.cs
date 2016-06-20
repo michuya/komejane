@@ -65,6 +65,7 @@ namespace ncv_plugin
     public void Run()
     {
       // TODO: 鯖インスタンスを起動
+      komejane.Run();
     }
   }
 }

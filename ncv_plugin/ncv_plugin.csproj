@@ -84,7 +84,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"C:\Program Files (x86)\Microsoft\ILMerge\ILMerge.exe" /ndebug /out:$(SolutionName).dll $(TargetFileName) komejane_common.dll</PostBuildEvent>
+    <PostBuildEvent>"C:\Program Files (x86)\Microsoft\ILMerge\ILMerge.exe" /target:library /ndebug /targetplatform:"4.0,C:\Windows\Microsoft.NET\Framework64\v4.0.30319" /out:$(SolutionName).dll $(TargetFileName) komejane_common.dll
+</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
