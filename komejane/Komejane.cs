@@ -49,13 +49,21 @@ namespace Komejane
       {
         ControlForm form = new ControlForm();
 
-        form.Owner = WindowOwner;
-        // TopMost取得できなくてもエラー起こさない
-        try { form.TopMost = WindowOwner.TopMost; } catch (Exception) { }
+
+        // オーナー取得できなくてもエラー起こさない
+        if (WindowOwner != null)
+        {
+          try {
+            form.Owner = WindowOwner;
+            form.TopMost = WindowOwner.TopMost;
+          } catch (Exception) { }
+        }
 
         // TODO: フォームの初期表示位置をコメビュのウィンドウの脇に設定(できれば他の子ウィンドウと被らない場所)
-
-        form.Show();
+        if (form.Owner != null)
+          form.Show();
+        else
+          form.ShowDialog();
       }
     }
 
