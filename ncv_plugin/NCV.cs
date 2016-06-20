@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Plugin;
+using UserType = Komejane.Komejane.UserType;
 
 namespace ncv_plugin
 {
@@ -11,6 +12,7 @@ namespace ncv_plugin
   {
     Komejane.Komejane komejane = new Komejane.Komejane();
     Plugin.IPluginHost _host = null;
+    int latestCommentNum = 0;
 
     public IPluginHost Host
     {
@@ -64,9 +66,48 @@ namespace ncv_plugin
 
     public void Run()
     {
+      Komejane.HttpLogger.Debug("test");
+
       // TODO: 鯖インスタンスを起動
       komejane.WindowOwner = _host.MainForm;
       komejane.Run();
+
+      _host.ReceivedComment += _host_ReceivedComment;
+    }
+
+    private void _host_ReceivedComment(object sender, ReceivedCommentEventArgs e)
+    {
+      if (e.CommentDataList.Count <= latestCommentNum) return;
+
+      try
+      {
+        for (int i = latestCommentNum; i < e.CommentDataList.Count; i++)
+        {
+          var Chat = e.CommentDataList[i];
+
+          UserType type = UserType.Member;
+
+          if (Chat.IsBSP) type = UserType.Bsp;
+
+          int commentNo = -1;
+          try { commentNo = int.Parse(Chat.No); } catch(Exception ex) { Komejane.HttpLogger.Debug(ex.ToString()); commentNo = -1; }
+
+          komejane.AddComment(
+            type,
+            commentNo,
+            Chat.UserId,
+            Chat.Name,
+            Chat.Comment,
+            Chat.IsAnonymity,
+            Chat.Premium
+          );
+        }
+
+        latestCommentNum = e.CommentDataList.Count;
+      } catch (Exception ex)
+      {
+        Komejane.HttpLogger.Debug(ex.ToString());
+      }
     }
   }
 }

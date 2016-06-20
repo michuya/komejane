@@ -11,6 +11,16 @@ namespace Komejane
     /* --------------------------------------------------------------------- */
     #region プラグイン定数とかステータスとか
     /* --------------------------------------------------------------------- */
+    public enum UserType
+    {
+      Caster,
+      Owner,
+      Bsp,
+      Member,
+      Normal,
+      System
+    }
+
     static public String Version
     {
       get { return "0.0.1"; }
@@ -30,6 +40,7 @@ namespace Komejane
     {
       get { return Http.isRun; }
     }
+
     /* --------------------------------------------------------------------- */
     #endregion
     /* --------------------------------------------------------------------- */
@@ -70,6 +81,14 @@ namespace Komejane
     public void Stop()
     {
       Http server = Http.Instance;
+    }
+
+    public async void AddComment(UserType type, int commentNo, string userId, string charaName, string comment, bool isAnonymous, int premium)
+    {
+      await Task.Run(() =>
+      {
+        HttpLogger.Trace("[" + commentNo + ":" + charaName + "] " + comment + " // Type:" + type + ((isAnonymous) ? "(184)" : (premium > 0) ? "(" + premium + ")" : ""));
+      });
     }
   }
 }
