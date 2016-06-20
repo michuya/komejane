@@ -48,7 +48,14 @@ namespace Komejane
       if (isShowWindow)
       {
         ControlForm form = new ControlForm();
-        form.ShowDialog();
+
+        form.Owner = WindowOwner;
+        // TopMost取得できなくてもエラー起こさない
+        try { form.TopMost = WindowOwner.TopMost; } catch (Exception) { }
+
+        // TODO: フォームの初期表示位置をコメビュのウィンドウの脇に設定(できれば他の子ウィンドウと被らない場所)
+
+        form.Show();
       }
     }
 
