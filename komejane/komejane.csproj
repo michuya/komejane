@@ -52,6 +52,7 @@
     <Compile Include="ControlForm.Designer.cs">
       <DependentUpon>ControlForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="HttpLogger.cs" />
     <Compile Include="Komejane.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Http.cs" />
