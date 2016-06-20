@@ -105,6 +105,7 @@
       this.MinimizeBox = false;
       this.Name = "ControlForm";
       this.Text = "こめじゃね！";
+      this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.ControlForm_FormClosed);
       this.ResumeLayout(false);
       this.PerformLayout();
 

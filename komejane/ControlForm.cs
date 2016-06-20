@@ -80,5 +80,11 @@ namespace Komejane
 
       server.serverStop();
     }
+
+    private void ControlForm_FormClosed(object sender, FormClosedEventArgs e)
+    {
+      Http server = Http.Instance;
+      server.serverStop();
+    }
   }
 }
