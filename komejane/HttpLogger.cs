@@ -42,7 +42,7 @@ namespace Komejane
 
     public override string ToString()
     {
-      return "[" + Date.ToString("yyyy/MM/dd HH:mm:ss") + "] [" + LevelString + "] " + Message;
+      return "[" + (new DateTimeOffset(Date)).ToString("yyyy/MM/dd HH:mm:ss K") + "] [" + LevelString + "] " + Message;
     }
   }
 
@@ -88,6 +88,11 @@ namespace Komejane
     string logDirectory { get; set; }
     string logFile { get; set; }
 
+    object lockLogWriter = new object();
+    DateTime lastWriteTime = DateTime.Now;
+
+    System.IO.StreamWriter logWriter = null;
+
     List<HttpLoggerData> logs = new List<HttpLoggerData>(1000);
 
     private HttpLogger()
@@ -105,7 +110,34 @@ namespace Komejane
         }
         // TODO: ログファイルの容量 or 日付をトリガーにファイルの切り替えを行う
 
-        System.IO.File.AppendAllText(System.IO.Path.GetFullPath(logDirectory + "\\" + logFile), e.Log.ToString() + Environment.NewLine);
+        string logPath = System.IO.Path.GetFullPath(logDirectory + "\\" + logFile);
+
+        // LogWriterを用意
+        lock (lockLogWriter)
+        {
+          if (logWriter == null)
+            logWriter = System.IO.File.AppendText(logPath);
+
+          logWriter.WriteAsync(e.Log.ToString() + Environment.NewLine);
+          lastWriteTime = DateTime.Now;
+        }
+
+        // 5秒使ってなかったらストリームを閉じる
+        System.Timers.Timer timer = new System.Timers.Timer(5000);
+        timer.AutoReset = false;
+        timer.Elapsed += (_sender, _e) =>
+        {
+          if ((DateTime.Now - lastWriteTime).TotalMilliseconds >= 4900)
+          {
+            lock (lockLogWriter)
+            {
+              System.Diagnostics.Debug.WriteLine("log writer dispose");
+              if (logWriter != null) logWriter.Dispose();
+              logWriter = null;
+            }
+          }
+        };
+        timer.Start();
       };
     }
 
