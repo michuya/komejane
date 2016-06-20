@@ -18,6 +18,24 @@ namespace Komejane
       Exception = ex;
     }
   }
+  public class HttpClientEventArgs : EventArgs
+  {
+    public HttpListenerContext Context { get; private set; }
+    public HttpClientEventArgs(HttpListenerContext context)
+    {
+      Context = context;
+    }
+  }
+  public class HttpRequestEventArgs : EventArgs
+  {
+    public HttpListenerRequest Request { get; private set; }
+    public HttpListenerResponse Response { get; private set; }
+    public HttpRequestEventArgs(HttpListenerRequest req, HttpListenerResponse res)
+    {
+      Request = req;
+      Response = res;
+    }
+  }
 
   public sealed class Http
   {
@@ -40,6 +58,9 @@ namespace Komejane
     public event EventHandler ServerStarted;
     public event EventHandler ServerStop;
     public event EventHandler ServerError;
+    public event EventHandler<HttpClientEventArgs> ClientConnection;
+    public event EventHandler<HttpRequestEventArgs> ClientRequest;
+    public event EventHandler<HttpClientEventArgs> ClientDisconnected;
 
     private void OnServerStarted(EventArgs e)
     {
@@ -56,6 +77,21 @@ namespace Komejane
       if (ServerError != null)
         ServerError(this, e);
     }
+    private void OnClientConnection(HttpClientEventArgs e)
+    {
+      if (ClientConnection != null)
+        ClientConnection(this, e);
+    }
+    private void OnClientRequest(HttpRequestEventArgs e)
+    {
+      if (ClientRequest != null)
+        ClientRequest(this, e);
+    }
+    private void OnClientDisconnection(HttpClientEventArgs e)
+    {
+      if (ClientDisconnected != null)
+        ClientDisconnected(this, e);
+    }
     /* --------------------------------------------------------------------- */
     #endregion
     /* --------------------------------------------------------------------- */
@@ -66,12 +102,49 @@ namespace Komejane
     }
 
     HttpListener server = null;
+    List<WebSocket> clients = new List<WebSocket>(32);
 
     private Http()
     {
-
-
+      ClientConnection += Http_ClientConnection;
     }
+
+    private async void Http_ClientConnection(object sender, HttpClientEventArgs e)
+    {
+#if DEBUG
+      System.Diagnostics.Debug.WriteLine("Request => " + e.Context.Request.RawUrl);
+#endif
+      await Task.Run(() => {
+        HttpListenerRequest req = e.Context.Request;
+        HttpListenerResponse res = e.Context.Response;
+
+        // "/stream"でWebSocketを待ち受ける
+        if (req.IsWebSocketRequest && req.RawUrl == "/stream")
+        {
+          // アクセスログ
+          HttpLogger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " WebSocket/Connect\" " + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
+
+          WebSocketProc(e.Context);
+        }
+        else
+        {
+          OnClientRequest(new HttpRequestEventArgs(e.Context.Request, e.Context.Response));
+
+          // アクセスログ
+          HttpLogger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " HTTP/" + req.ProtocolVersion +"\" " + res.StatusCode + " " + res.ContentLength64 + " \"" + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
+          e.Context.Response.Close();
+        }
+      });
+    }
+
+    private bool isServerRun
+    {
+      get { return (server != null && server.IsListening); }
+    }
+
+    /* --------------------------------------------------------------------- */
+#region サーバ制御関係
+    /* --------------------------------------------------------------------- */
 
     private bool isServerSocketListening()
     {
@@ -132,6 +205,7 @@ namespace Komejane
         }
       });
 
+      HttpListen();
     }
 
     public async void serverStop()
@@ -180,10 +254,69 @@ namespace Komejane
           serverStart();
       });
     }
+    /* --------------------------------------------------------------------- */
+#endregion
+    /* --------------------------------------------------------------------- */
 
-    private bool isServerRun
+    /* --------------------------------------------------------------------- */
+#region 標準HTTPコネクション
+    /* --------------------------------------------------------------------- */
+    private async void HttpListen()
     {
-      get { return (server != null && server.IsListening); }
+      while (true)
+      {
+        HttpListenerContext context;
+        try
+        {
+          context = await server.GetContextAsync();
+        } catch (HttpListenerException) { break; } // 鯖停止時に例外くるからループ終了
+        System.Diagnostics.Debug.WriteLine("Client connected");
+        OnClientConnection(new HttpClientEventArgs(context));
+      }
     }
+    /* --------------------------------------------------------------------- */
+#endregion
+    /* --------------------------------------------------------------------- */
+
+    /* --------------------------------------------------------------------- */
+#region WebSocketAPIコネクション
+    /* --------------------------------------------------------------------- */
+    private async void WebSocketProc(HttpListenerContext context)
+    {
+      var wscon = await context.AcceptWebSocketAsync(null);
+      var ws = wscon.WebSocket;
+
+      clients.Add(ws);
+
+      while (ws.State == WebSocketState.Open)
+      {
+        try
+        {
+          var buff = new ArraySegment<byte>(new byte[1024]);
+
+          // 受信待機
+          var ret = await ws.ReceiveAsync(buff, System.Threading.CancellationToken.None);
+
+          if (ret.MessageType == WebSocketMessageType.Text)
+          {
+            // なんか受信する物あるっけ？エラーとか？
+          }
+          else if (ret.MessageType == WebSocketMessageType.Close) /// クローズ
+          {
+            break;
+          }
+        } catch
+        {
+          break;
+        }
+      }
+
+      clients.Remove(ws);
+      ws.Dispose();
+    }
+    /* --------------------------------------------------------------------- */
+#endregion
+    /* --------------------------------------------------------------------- */
+
   }
 }
