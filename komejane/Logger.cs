@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Komejane
 {
-  public class HttpLoggerEventArgs : EventArgs
+  public class LoggerEventArgs : EventArgs
   {
-    public HttpLoggerData Log { get; private set; }
-    public HttpLoggerEventArgs(HttpLoggerData log)
+    public LoggerData Log { get; private set; }
+    public LoggerEventArgs(LoggerData log)
     {
       Log = log;
     }
@@ -18,22 +18,22 @@ namespace Komejane
   /// <summary>
   /// 簡易ロガー用ログデータ
   /// </summary>
-  public class HttpLoggerData
+  public class LoggerData
   {
     string[] logLevelString = { "info", "debug", "trace" };
 
-    public HttpLogger.LogLevel Level { get; protected set; }
+    public Logger.LogLevel Level { get; protected set; }
     public string LevelString { get { return logLevelString[(int)Level]; } }
     public DateTime Date { get; protected set; }
     public string Message { get; protected set; }
 
-    public HttpLoggerData(string message)
+    public LoggerData(string message)
     {
       Date = DateTime.Now;
-      Level = HttpLogger.LogLevel.DEBUG;
+      Level = Logger.LogLevel.DEBUG;
       Message = message;
     }
-    public HttpLoggerData(HttpLogger.LogLevel level, string message)
+    public LoggerData(Logger.LogLevel level, string message)
     {
       Date = DateTime.Now;
       Level = level;
@@ -49,14 +49,14 @@ namespace Komejane
   /// <summary>
   /// 簡易ロガー
   /// </summary>
-  public sealed class HttpLogger
+  public sealed class Logger
   {
     /* --------------------------------------------------------------------- */
     #region シングルトン関係
     /* --------------------------------------------------------------------- */
-    private static HttpLogger instance = new HttpLogger();
+    private static Logger instance = new Logger();
 
-    public static HttpLogger Instance
+    public static Logger Instance
     {
       get { return instance; }
     }
@@ -67,9 +67,9 @@ namespace Komejane
     /* --------------------------------------------------------------------- */
     #region イベント関係
     /* --------------------------------------------------------------------- */
-    public EventHandler<HttpLoggerEventArgs> AddLog;
+    public EventHandler<LoggerEventArgs> AddLog;
 
-    private void OnAddLog(HttpLoggerEventArgs e)
+    private void OnAddLog(LoggerEventArgs e)
     {
       if (AddLog != null)
         AddLog(this, e);
@@ -85,19 +85,29 @@ namespace Komejane
       TRACE
     }
 
-    string logDirectory { get; set; }
+    string _logdir;
+    string logDirectory
+    {
+      get { return _logdir; }
+      set {
+        string dllLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        _logdir = System.IO.Path.GetDirectoryName(dllLocation) + "\\" + value;
+      }
+    }
     string logFile { get; set; }
+    string logPath { get { return System.IO.Path.GetFullPath(logDirectory + "\\" + logFile); } }
 
     object lockLogWriter = new object();
     DateTime lastWriteTime = DateTime.Now;
 
     System.IO.StreamWriter logWriter = null;
 
-    List<HttpLoggerData> logs = new List<HttpLoggerData>(1000);
+    List<LoggerData> logs = new List<LoggerData>(1000);
 
-    private HttpLogger()
+    private Logger()
     {
-      logDirectory = ".\\komejane\\log";
+
+      logDirectory = "komejane\\log";
       logFile = "access.log";
 
       // ログ追記イベント
@@ -110,15 +120,13 @@ namespace Komejane
         }
         // TODO: ログファイルの容量 or 日付をトリガーにファイルの切り替えを行う
 
-        string logPath = System.IO.Path.GetFullPath(logDirectory + "\\" + logFile);
-
         // LogWriterを用意
         lock (lockLogWriter)
         {
           if (logWriter == null)
             logWriter = System.IO.File.AppendText(logPath);
 
-          logWriter.WriteAsync(e.Log.ToString() + Environment.NewLine);
+          logWriter.Write(e.Log.ToString() + Environment.NewLine);
           lastWriteTime = DateTime.Now;
         }
 
@@ -149,34 +157,38 @@ namespace Komejane
     {
       await Task.Run(() => {
 
-        HttpLoggerData log = new HttpLoggerData(level, message);
+        LoggerData log = new LoggerData(level, message);
 
         // イベント発行前にオンメモリのログへ追加
         logs.Add(log);
 
         // 新規ログ追加イベント発行
-        OnAddLog(new HttpLoggerEventArgs(log));
+        OnAddLog(new LoggerEventArgs(log));
       });
     }
 
+    public static LoggerData[] GetAllLogs()
+    {
+      return Logger.Instance.logs.ToArray();
+    }
     public static void Info(string message)
     {
-      HttpLogger logger = HttpLogger.Instance;
+      Logger logger = Logger.Instance;
       logger.writeLine(LogLevel.INFO, message);
     }
     public static void Debug(string message)
     {
-      HttpLogger logger = HttpLogger.Instance;
+      Logger logger = Logger.Instance;
       logger.writeLine(LogLevel.DEBUG, message);
     }
     public static void Trace(string message)
     {
-      HttpLogger logger = HttpLogger.Instance;
+      Logger logger = Logger.Instance;
       logger.writeLine(LogLevel.TRACE, message);
     }
     public static void WriteLine(LogLevel level, string message)
     {
-      HttpLogger logger = HttpLogger.Instance;
+      Logger logger = Logger.Instance;
       logger.writeLine(level, message);
     }
   }
