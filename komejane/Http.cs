@@ -62,6 +62,7 @@ namespace Komejane
     public event EventHandler ServerError;
     public event EventHandler<HttpClientEventArgs> ClientConnection;
     public event EventHandler<HttpRequestEventArgs> ClientRequest;
+    public event EventHandler<HttpRequestEventArgs> WebAPIRequest;
     public event EventHandler<HttpClientEventArgs> ClientDisconnected;
 
     private void OnServerStarted(EventArgs e)
@@ -89,6 +90,11 @@ namespace Komejane
       if (ClientRequest != null)
         ClientRequest(this, e);
     }
+    private void OnWebAPIRequest(HttpRequestEventArgs e)
+    {
+      if (WebAPIRequest != null)
+        WebAPIRequest(this, e);
+    }
     private void OnClientDisconnection(HttpClientEventArgs e)
     {
       if (ClientDisconnected != null)
@@ -110,6 +116,12 @@ namespace Komejane
     {
       ClientConnection += Http_ClientConnection;
       ClientRequest += Http_ClientRequest;
+      WebAPIRequest += Http_WebAPIRequest;
+    }
+
+    private void Http_WebAPIRequest(object sender, HttpRequestEventArgs e)
+    {
+      
     }
 
     private void Http_ClientRequest(object sender, HttpRequestEventArgs e)
@@ -118,10 +130,7 @@ namespace Komejane
       HttpListenerResponse res = e.Response;
 
       // リクエストのローカルパスを組み立て
-      string dummyPath = Path.GetFullPath( Path.Combine( "A:\\", req.RawUrl.Replace('/', '\\') ) ).Substring(3);
-      Logger.Trace("RawURI: " + dummyPath);
-
-      string requestURI = Path.Combine( Config.Instance.WebRootDirectory, dummyPath );
+      string requestURI = Path.Combine( Config.Instance.WebRootDirectory, req.Url.AbsolutePath.Replace('/', '\\'));
       if (!Path.IsPathRooted(requestURI)) { requestURI = Path.Combine(Config.Instance.DllDirectory, requestURI); }
       Logger.Debug("RequestURI: " + requestURI);
 
@@ -173,7 +182,7 @@ namespace Komejane
         HttpListenerResponse res = e.Context.Response;
 
         // "/stream"でWebSocketを待ち受ける
-        if (req.IsWebSocketRequest && req.RawUrl == "/stream")
+        if (req.IsWebSocketRequest && req.Url.AbsolutePath == "/stream")
         {
           // アクセスログ
           Logger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " WebSocket/Connect\" " + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
@@ -182,7 +191,10 @@ namespace Komejane
         }
         else
         {
-          OnClientRequest(new HttpRequestEventArgs(e.Context.Request, e.Context.Response));
+          if (req.Url.AbsolutePath.StartsWith("/api/"))
+            OnWebAPIRequest(new HttpRequestEventArgs(e.Context.Request, e.Context.Response));
+          else
+            OnClientRequest(new HttpRequestEventArgs(e.Context.Request, e.Context.Response));
 
           // アクセスログ
           Logger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " HTTP/" + req.ProtocolVersion +"\" " + res.StatusCode + " " + res.ContentLength64 + " \"" + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
