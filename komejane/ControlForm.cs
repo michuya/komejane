@@ -11,6 +11,8 @@ namespace Komejane
 {
   public partial class ControlForm : Form
   {
+    LogForm logForm;
+
     public ControlForm()
     {
       InitializeComponent();
@@ -19,6 +21,13 @@ namespace Komejane
 
       server.ServerStarted += Server_ServerStarted;
       server.ServerStop += Server_ServerStop;
+
+      Logger.Instance.AddLog += (sender, e) =>
+      {
+        if (logForm == null) return;
+
+        logForm.addLog(e.Log);
+      };
     }
 
     private void Server_ServerStop(object sender, EventArgs e)
@@ -38,7 +47,7 @@ namespace Komejane
         Invoke(new Action(() => {
           Config conf = Config.Instance;
 
-          if (Komejane.isRun)
+          if (Komejane.IsServerRun)
           {
             txtUrlSample.Text = "http://" + conf.ListenHost + ":" + conf.Port;
             txtUrlSample.Enabled = true;
@@ -85,6 +94,13 @@ namespace Komejane
     {
       Http server = Http.Instance;
       server.serverStop();
+    }
+
+    private void btnShowLog_Click(object sender, EventArgs e)
+    {
+      logForm = new LogForm();
+      logForm.FormClosed += (_sender, _e) => { logForm = null; };
+      logForm.Show();
     }
   }
 }

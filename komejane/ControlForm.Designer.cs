@@ -33,6 +33,7 @@
       this.btnClose = new System.Windows.Forms.Button();
       this.btnServRun = new System.Windows.Forms.Button();
       this.btnServStop = new System.Windows.Forms.Button();
+      this.btnShowLog = new System.Windows.Forms.Button();
       this.SuspendLayout();
       // 
       // label1
@@ -88,11 +89,22 @@
       this.btnServStop.UseVisualStyleBackColor = true;
       this.btnServStop.Click += new System.EventHandler(this.btnServStop_Click);
       // 
+      // btnShowLog
+      // 
+      this.btnShowLog.Location = new System.Drawing.Point(199, 56);
+      this.btnShowLog.Name = "btnShowLog";
+      this.btnShowLog.Size = new System.Drawing.Size(88, 23);
+      this.btnShowLog.TabIndex = 5;
+      this.btnShowLog.Text = "ログを表示";
+      this.btnShowLog.UseVisualStyleBackColor = true;
+      this.btnShowLog.Click += new System.EventHandler(this.btnShowLog_Click);
+      // 
       // ControlForm
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(336, 124);
+      this.Controls.Add(this.btnShowLog);
       this.Controls.Add(this.btnServStop);
       this.Controls.Add(this.btnServRun);
       this.Controls.Add(this.btnClose);
@@ -118,5 +130,6 @@
         private System.Windows.Forms.Button btnClose;
     private System.Windows.Forms.Button btnServRun;
     private System.Windows.Forms.Button btnServStop;
+    private System.Windows.Forms.Button btnShowLog;
   }
 }
