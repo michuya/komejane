@@ -8,6 +8,8 @@ using System.Net.WebSockets;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
+using System.IO;
+
 namespace Komejane
 {
   public class HttpExceptionEventArgs : EventArgs
@@ -107,13 +109,65 @@ namespace Komejane
     private Http()
     {
       ClientConnection += Http_ClientConnection;
+      ClientRequest += Http_ClientRequest;
+    }
+
+    private void Http_ClientRequest(object sender, HttpRequestEventArgs e)
+    {
+      HttpListenerRequest req = e.Request;
+      HttpListenerResponse res = e.Response;
+
+      // リクエストのローカルパスを組み立て
+      string dummyPath = Path.GetFullPath( Path.Combine( "A:\\", req.RawUrl.Replace('/', '\\') ) ).Substring(3);
+      Logger.Trace("RawURI: " + dummyPath);
+
+      string requestURI = Path.Combine( Config.Instance.WebRootDirectory, dummyPath );
+      if (!Path.IsPathRooted(requestURI)) { requestURI = Path.Combine(Config.Instance.DllDirectory, requestURI); }
+      Logger.Debug("RequestURI: " + requestURI);
+
+      // ディレクトリだった場合はインデックスのファイルを追加
+      if (Directory.Exists(requestURI))
+      {
+        requestURI += "\\" + Config.Instance.WebIndex;
+
+        Logger.Debug("RequestURI(Append Index): " + requestURI);
+      }
+
+      // ファイルが存在する場合はファイルを返す
+      if (File.Exists(requestURI))
+      {
+        FileInfo info = new FileInfo(requestURI);
+
+        string ext = info.Extension.ToLower().TrimStart(".".ToCharArray());
+
+        // MimeTypeを取得
+        var mimeDic = Config.Instance.MimeFromExtentionDictionary;
+        if (mimeDic.ContainsKey(ext))
+        {
+          res.ContentType = mimeDic[ext];
+          Logger.Trace("MimeType(fromExtention): " + res.ContentType);
+        }
+        else
+        {
+          res.ContentType = FileUtility.FindMimeFromFile(requestURI);
+          Logger.Trace("MimeType(fromFile): " + res.ContentType);
+        }
+
+        // ファイルサイズを設定
+        res.ContentLength64 = info.Length;
+
+        FileStream fs = new FileStream(requestURI, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        fs.CopyTo(res.OutputStream);
+        fs.Close();
+      }
+      else // なければ当然404
+      {
+        res.StatusCode = 404;
+      }
     }
 
     private async void Http_ClientConnection(object sender, HttpClientEventArgs e)
     {
-#if DEBUG
-      System.Diagnostics.Debug.WriteLine("Request => " + e.Context.Request.RawUrl);
-#endif
       await Task.Run(() => {
         HttpListenerRequest req = e.Context.Request;
         HttpListenerResponse res = e.Context.Response;
@@ -315,7 +369,7 @@ namespace Komejane
       ws.Dispose();
     }
     /* --------------------------------------------------------------------- */
-#endregion
+    #endregion
     /* --------------------------------------------------------------------- */
 
   }

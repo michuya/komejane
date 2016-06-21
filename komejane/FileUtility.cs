@@ -47,7 +47,7 @@ namespace Komejane
         return null;
     }
 
-    public static string FindMimeFromStream(System.IO.StreamReader stream)
+    public static string FindMimeFromStream(System.IO.StreamReader stream, string mimeProposed = null)
     {
       char[] readBuff = new char[256];
       int readBytes = stream.ReadBlock(readBuff, 0, 256);
@@ -58,14 +58,14 @@ namespace Komejane
         buff.AddRange(BitConverter.GetBytes(c));
       }
 
-      return FindMimeFromData(buff.ToArray());
+      return FindMimeFromData(buff.ToArray(), mimeProposed);
     }
 
-    public static string FindMimeFromFile(string path)
+    public static string FindMimeFromFile(string path, string mimeProposed = null)
     {
       System.IO.StreamReader stream = new System.IO.StreamReader(path);
 
-      string result = FindMimeFromStream(stream);
+      string result = FindMimeFromStream(stream, mimeProposed);
 
       stream.Close();
       stream.Dispose();

@@ -52,6 +52,7 @@
     <Compile Include="ControlForm.Designer.cs">
       <DependentUpon>ControlForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="FileUtility.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Komejane.cs" />
     <Compile Include="LogForm.cs">
