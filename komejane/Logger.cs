@@ -85,17 +85,7 @@ namespace Komejane
       TRACE
     }
 
-    string _logdir;
-    string logDirectory
-    {
-      get { return _logdir; }
-      set {
-        string dllLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
-        _logdir = System.IO.Path.GetDirectoryName(dllLocation) + "\\" + value;
-      }
-    }
-    string logFile { get; set; }
-    string logPath { get { return System.IO.Path.GetFullPath(logDirectory + "\\" + logFile); } }
+    string logPath { get { return System.IO.Path.Combine(Config.Instance.DllDirectory, Config.Instance.LogDirectory, Config.Instance.LogFile); } }
 
     public LogLevel LoggingLevel { get; set; }
 
@@ -109,8 +99,6 @@ namespace Komejane
     private Logger()
     {
       LoggingLevel = LogLevel.DEBUG;
-      logDirectory = "komejane\\log";
-      logFile = "access.log";
 
       // ログ追記イベント
       AddLog += (sender, e) =>
@@ -119,9 +107,9 @@ namespace Komejane
         if ((int)e.Log.Level > (int)LoggingLevel) return;
 
         // ログディレクトリの作成
-        if (!System.IO.Directory.Exists(logDirectory))
+        if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(logPath)))
         {
-          System.IO.Directory.CreateDirectory(logDirectory);
+          System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(logPath));
         }
         // TODO: ログファイルの容量 or 日付をトリガーにファイルの切り替えを行う
 

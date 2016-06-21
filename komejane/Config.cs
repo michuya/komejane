@@ -28,12 +28,22 @@ namespace Komejane
 
     }
 
-    // 初期値
+    /* --------------------------------------------------------------------- */
+    #region 初期値
+    /* --------------------------------------------------------------------- */
+    // http系
     UInt16 port = 4815;
     string listenHost = "127.0.0.1";
+
+    // ファイル系
     string dllDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    string logDirectory = "komejane\\log";
+    string logFile = "komejane.log";
+
+    // web系
     string webRootDirectory = "komejane\\web";
     string webIndex = "index.html";
+
     Dictionary<string, string> mimeFromExtension = new Dictionary<string, string>()
     {
       { "htm", "text/html" },
@@ -46,8 +56,13 @@ namespace Komejane
       { "jpg", "image/jpeg" },
       { "jpeg", "image/jpeg" }
     };
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
 
-    // プロパティ
+    /* --------------------------------------------------------------------- */
+    #region プロパティ
+    /* --------------------------------------------------------------------- */
     public UInt16 Port
     {
       get { return port; }
@@ -61,6 +76,16 @@ namespace Komejane
     public string DllDirectory
     {
       get { return dllDirectory; }
+    }
+
+    public string LogDirectory
+    {
+      get { return logDirectory; }
+    }
+
+    public string LogFile
+    {
+      get { return logFile; }
     }
 
     public string WebRootDirectory
@@ -80,5 +105,8 @@ namespace Komejane
         return new Dictionary<string, string>(mimeFromExtension);
       }
     }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
   }
 }
