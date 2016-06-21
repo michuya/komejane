@@ -122,7 +122,7 @@ namespace Komejane
         if (req.IsWebSocketRequest && req.RawUrl == "/stream")
         {
           // アクセスログ
-          HttpLogger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " WebSocket/Connect\" " + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
+          Logger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " WebSocket/Connect\" " + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
 
           WebSocketProc(e.Context);
         }
@@ -131,7 +131,7 @@ namespace Komejane
           OnClientRequest(new HttpRequestEventArgs(e.Context.Request, e.Context.Response));
 
           // アクセスログ
-          HttpLogger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " HTTP/" + req.ProtocolVersion +"\" " + res.StatusCode + " " + res.ContentLength64 + " \"" + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
+          Logger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " HTTP/" + req.ProtocolVersion +"\" " + res.StatusCode + " " + res.ContentLength64 + " \"" + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
           e.Context.Response.Close();
         }
       });
