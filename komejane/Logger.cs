@@ -162,7 +162,7 @@ namespace Komejane
 
     public static LoggerData[] GetAllLogs()
     {
-      return Logger.Instance.logs.FindAll((l) => { return (int)l.Level > (int)Logger.Instance.LoggingLevel; }).ToArray();
+      return Logger.Instance.logs.FindAll((l) => { return (int)l.Level <= (int)Logger.Instance.LoggingLevel; }).ToArray();
     }
     public static void Info(string message)
     {
