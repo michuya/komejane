@@ -14,6 +14,9 @@ namespace anko_plugin
     Komejane.Komejane komejane = new Komejane.Komejane();
     ankoPlugin2.IPluginHost _host = null;
 
+    bool isFirstReciveChat = false;
+    object lockFirstRecive = new object();
+
     public IPluginHost host
     {
       get
@@ -39,7 +42,7 @@ namespace anko_plugin
     {
       get
       {
-        return false;
+        return komejane.IsAlive;
       }
     }
 
@@ -58,33 +61,47 @@ namespace anko_plugin
       komejane.Run();
 
       _host.ReceiveChat += _host_ReceiveChat;
+      _host.ConnectedServer += (sender, e) => { isFirstReciveChat = true; };
+      _host.DisconnectedServer += (sender, e) => { isFirstReciveChat = false; };
+    }
+
+    private void addComment(LibAnko.chat chat)
+    {
+      var user = chat.userinfo;
+
+      UserType type = UserType.Member;
+
+      if (chat.IsCaster) type = UserType.Caster;
+      else if (chat.IsBSP) type = UserType.Bsp;
+      else if (user != null && user.isMember) type = UserType.Member;
+      else type = UserType.Normal;
+
+      komejane.AddComment(
+        type,
+        chat.No,
+        chat.UserId,
+        chat.NickName,
+        chat.Message,
+        chat.Anonymity,
+        chat.Premium
+      );
     }
 
     private void _host_ReceiveChat(object sender, ReceiveChatEventArgs e)
     {
-      var user = e.Chat.userinfo;
-
       if (!IsAlive) return;
 
-      if (user != null)
+      lock (lockFirstRecive)
       {
-        UserType type = UserType.Member;
+        if (isFirstReciveChat && e.Chat.No > 1)
+        {
+          foreach (var chat in _host.Chats) addComment(chat);
 
-        if (e.Chat.IsCaster) type = UserType.Caster;
-        else if (e.Chat.IsBSP) type = UserType.Bsp;
-        else if (user.isMember) type = UserType.Member;
-        else type = UserType.Normal;
-
-        komejane.AddComment(
-          type,
-          e.Chat.No,
-          e.Chat.UserId,
-          e.Chat.NickName,
-          e.Chat.Message,
-          e.Chat.Anonymity,
-          e.Chat.Premium
-        );
+          isFirstReciveChat = false;
+        }
       }
+
+      addComment(e.Chat);
     }
   }
 }

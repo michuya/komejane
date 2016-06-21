@@ -36,7 +36,7 @@ namespace Komejane
       get { return "OBS CLR Plugin/Obs Studio Browser Plugin用HTML5コメントジェネレータ"; }
     }
 
-    static public bool isRun
+    static public bool IsServerRun
     {
       get { return Http.isRun; }
     }
@@ -51,6 +51,8 @@ namespace Komejane
     {
 
     }
+
+    public bool IsAlive { get; protected set; }
 
     public void Run(bool isShowWindow = true)
     {
@@ -70,12 +72,18 @@ namespace Komejane
           } catch (Exception) { }
         }
 
+        // フォームが閉じた時にIsAliveを殺す
+        form.FormClosing += (sender, e) => { IsAlive = false; };
+
         // TODO: フォームの初期表示位置をコメビュのウィンドウの脇に設定(できれば他の子ウィンドウと被らない場所)
         if (form.Owner != null)
           form.Show();
         else
           form.ShowDialog();
       }
+
+      IsAlive = true;
+      Logger.Debug("プラグイン起動じゃい！");
     }
 
     public void Stop()
@@ -85,9 +93,13 @@ namespace Komejane
 
     public async void AddComment(UserType type, int commentNo, string userId, string charaName, string comment, bool isAnonymous, int premium)
     {
+      // コマンド系を無視
+      if (comment.StartsWith("/")) return;
+
+      string cstr = "[" + commentNo + ":" + charaName + "] " + comment + " // Type:" + type + ((isAnonymous) ? "(184)" : (premium > 0) ? "(" + premium + ")" : "");
       await Task.Run(() =>
       {
-        HttpLogger.Trace("[" + commentNo + ":" + charaName + "] " + comment + " // Type:" + type + ((isAnonymous) ? "(184)" : (premium > 0) ? "(" + premium + ")" : ""));
+        Logger.Trace(cstr);
       });
     }
   }
