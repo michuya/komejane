@@ -97,6 +97,8 @@ namespace Komejane
     string logFile { get; set; }
     string logPath { get { return System.IO.Path.GetFullPath(logDirectory + "\\" + logFile); } }
 
+    public LogLevel LoggingLevel { get; set; }
+
     object lockLogWriter = new object();
     DateTime lastWriteTime = DateTime.Now;
 
@@ -106,13 +108,16 @@ namespace Komejane
 
     private Logger()
     {
-
+      LoggingLevel = LogLevel.DEBUG;
       logDirectory = "komejane\\log";
       logFile = "access.log";
 
       // ログ追記イベント
       AddLog += (sender, e) =>
       {
+        // ロギングレベルで書き出すログをフィルター
+        if ((int)e.Log.Level > (int)LoggingLevel) return;
+
         // ログディレクトリの作成
         if (!System.IO.Directory.Exists(logDirectory))
         {
@@ -169,7 +174,7 @@ namespace Komejane
 
     public static LoggerData[] GetAllLogs()
     {
-      return Logger.Instance.logs.ToArray();
+      return Logger.Instance.logs.FindAll((l) => { return (int)l.Level > (int)Logger.Instance.LoggingLevel; }).ToArray();
     }
     public static void Info(string message)
     {
