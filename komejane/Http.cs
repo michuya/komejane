@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 using System.IO;
 
-namespace Komejane
+namespace Komejane.Server
 {
   public class HttpExceptionEventArgs : EventArgs
   {
@@ -121,7 +121,7 @@ namespace Komejane
 
     private void Http_WebAPIRequest(object sender, HttpRequestEventArgs e)
     {
-      
+
     }
 
     private void Http_ClientRequest(object sender, HttpRequestEventArgs e)
@@ -130,7 +130,7 @@ namespace Komejane
       HttpListenerResponse res = e.Response;
 
       // リクエストのローカルパスを組み立て
-      string requestURI = Path.Combine( Config.Instance.WebRootDirectory, req.Url.AbsolutePath.Replace('/', '\\'));
+      string requestURI = Path.Combine(Config.Instance.WebRootDirectory, req.Url.LocalPath);
       if (!Path.IsPathRooted(requestURI)) { requestURI = Path.Combine(Config.Instance.DllDirectory, requestURI); }
       Logger.Debug("RequestURI: " + requestURI);
 
@@ -177,7 +177,8 @@ namespace Komejane
 
     private async void Http_ClientConnection(object sender, HttpClientEventArgs e)
     {
-      await Task.Run(() => {
+      await Task.Run(() =>
+      {
         HttpListenerRequest req = e.Context.Request;
         HttpListenerResponse res = e.Context.Response;
 
@@ -197,7 +198,7 @@ namespace Komejane
             OnClientRequest(new HttpRequestEventArgs(e.Context.Request, e.Context.Response));
 
           // アクセスログ
-          Logger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " HTTP/" + req.ProtocolVersion +"\" " + res.StatusCode + " " + res.ContentLength64 + " \"" + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
+          Logger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " HTTP/" + req.ProtocolVersion + "\" " + res.StatusCode + " " + res.ContentLength64 + " \"" + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
           e.Context.Response.Close();
         }
       });
@@ -209,7 +210,7 @@ namespace Komejane
     }
 
     /* --------------------------------------------------------------------- */
-#region サーバ制御関係
+    #region サーバ制御関係
     /* --------------------------------------------------------------------- */
 
     private bool isServerSocketListening()
@@ -321,11 +322,11 @@ namespace Komejane
       });
     }
     /* --------------------------------------------------------------------- */
-#endregion
+    #endregion
     /* --------------------------------------------------------------------- */
 
     /* --------------------------------------------------------------------- */
-#region 標準HTTPコネクション
+    #region 標準HTTPコネクション
     /* --------------------------------------------------------------------- */
     private async void HttpListen()
     {
@@ -335,17 +336,18 @@ namespace Komejane
         try
         {
           context = await server.GetContextAsync();
-        } catch (HttpListenerException) { break; } // 鯖停止時に例外くるからループ終了
+        }
+        catch (HttpListenerException) { break; } // 鯖停止時に例外くるからループ終了
         System.Diagnostics.Debug.WriteLine("Client connected");
         OnClientConnection(new HttpClientEventArgs(context));
       }
     }
     /* --------------------------------------------------------------------- */
-#endregion
+    #endregion
     /* --------------------------------------------------------------------- */
 
     /* --------------------------------------------------------------------- */
-#region WebSocketAPIコネクション
+    #region WebSocketAPIコネクション
     /* --------------------------------------------------------------------- */
     private async void WebSocketProc(HttpListenerContext context)
     {
@@ -371,7 +373,8 @@ namespace Komejane
           {
             break;
           }
-        } catch
+        }
+        catch
         {
           break;
         }

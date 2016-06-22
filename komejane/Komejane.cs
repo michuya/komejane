@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Komejane.Server;
+
 namespace Komejane
 {
   public class Komejane
@@ -93,7 +95,6 @@ namespace Komejane
 
     public async void AddComment(UserType type, int commentNo, string userId, string charaName, string comment, bool isAnonymous, int premium)
     {
-      // コマンド系を無視
       if (comment.StartsWith("/")) return;
 
       string cstr = "[" + commentNo + ":" + charaName + "] " + comment + " // Type:" + type + ((isAnonymous) ? "(184)" : (premium > 0) ? "(" + premium + ")" : "");
