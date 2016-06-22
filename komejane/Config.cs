@@ -43,6 +43,13 @@ namespace Komejane
     // web系
     string webRootDirectory = "komejane\\web";
     string webIndex = "index.html";
+    string[] webRoutes =
+    {
+      "get /api DefaultController",
+      "get /api/wsInfo WebSocketController.info()",
+      "get /api/config ConfigController",
+      "get /stream WebSocketController.stream()"
+    };
 
     Dictionary<string, string> mimeFromExtension = new Dictionary<string, string>()
     {
@@ -96,6 +103,11 @@ namespace Komejane
     public string WebIndex
     {
       get { return webIndex; }
+    }
+
+    public string[] WebRoutes
+    {
+      get { return webRoutes; }
     }
 
     public Dictionary<string, string> MimeFromExtentionDictionary
