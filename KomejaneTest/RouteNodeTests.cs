@@ -26,6 +26,10 @@ namespace Komejane.Server.Tests
       node.AddValue("value2");
       Assert.AreEqual<string>(node.ToString(), "<value1, value2>");
 
+      // 子有りValue有り
+      node.CreateNode("/");
+      Assert.AreEqual<string>(node.ToString(), "[/] => <>\n<value1, value2>");
+
       node = new RouteNode();
 
       node.CreateNode("GET");
@@ -35,6 +39,38 @@ namespace Komejane.Server.Tests
       node.Children["GET"].CreateNode("/users");
       Assert.AreEqual<string>(node.Children["GET"].ToString(), "[/] ======> <>\n[/users] => <>");
       Assert.AreEqual<string>(node.ToString(), "[GET] => [/] ======> <>\n         [/users] => <>");
+    }
+
+    [TestMethod()]
+    public void AddValueTest()
+    {
+      RouteNode node = new RouteNode();
+
+      Assert.AreEqual(node.AddValue("value1"), node);
+
+      Assert.AreEqual(node.Value[0], "value1");
+    }
+
+    [TestMethod()]
+    public void AddValuesTest()
+    {
+      string[] values =
+      {
+        "valueA",
+        "valueB",
+        "_valueC",
+        "_valueD",
+        "_value@"
+      };
+      RouteNode node = new RouteNode();
+
+      Assert.AreEqual(node.AddValues(values), node);
+
+      for (int i = 0; i < values.Length; i++)
+      {
+        // List<>の順序が追加順のため成功する
+        Assert.AreEqual(node.Value[i], values[i]);
+      }
     }
   }
 }

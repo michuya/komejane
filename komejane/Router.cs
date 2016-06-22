@@ -105,12 +105,10 @@ namespace Komejane.Server
         first = false;
       }
 
+      if (values.Count > 0)
+        cache = string.Format("{0}\n<{1}>", cache, string.Join(", ", values));
+
       return cache;
-    }
-    public string ToString(int offset)
-    {
-      var offsetSpace = new string(' ', offset);
-      return Regex.Replace(this.ToString(), "^", offsetSpace, RegexOptions.Multiline);
     }
     /* --------------------------------------------------------------------- */
     #endregion
@@ -120,7 +118,7 @@ namespace Komejane.Server
 
   public class Router
   {
-    Regex methodParser = new Regex(@"^\s*(get|post|put|delete|head|patch)\s+([a-z0-9_\-:/]*)\s+([a-z0-9_]*)\s*$", RegexOptions.IgnoreCase);
+    Regex methodParser = new Regex(@"^\s*(get|post|put|delete|head|patch)\s+([a-z0-9_\-:/]*)\s+([a-z0-9_\.\(\)]*)\s*$", RegexOptions.IgnoreCase);
 
     RouteNode root = new RouteNode();
 
@@ -168,7 +166,7 @@ namespace Komejane.Server
       {
         current = current.CreateNode("/" + s);
       }
-      current.AddValue(controller);
+      current.AddValues(controller.Replace("()", "").Split('.'));
     }
   }
 }

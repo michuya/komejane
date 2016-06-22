@@ -38,13 +38,13 @@ namespace Komejane.Server.Tests
 
       router.AddRoutes(routes);
 
-      Assert.AreEqual<string>(router.RootNode.ToString(),
-        @"
-[GET] => [/] =======> <DefaultController>
-         [/api] ====> [/wsInfo] => <WebSocketController, info>
-                      [/config] => <ConfigController>
-                      <DefaultController, api>
-         [/stream] => <DefaultController, api>");
+      Assert.AreEqual<string>(router.RootNode.ToString(), string.Join("\n", new string[] {
+        "[GET] => [/] =======> <DefaultController>",
+        "         [/api] ====> [/wsInfo] => <WebSocketController, info>",
+        "                      [/config] => <ConfigController>",
+        "                      <DefaultController, api>",
+        "         [/stream] => <WebSocketController, stream>"
+      }));
     }
-}
+  }
 }
