@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Net;
+
 using System.Text.RegularExpressions;
 
 namespace Komejane.Server
@@ -14,16 +16,43 @@ namespace Komejane.Server
     Dictionary<string, RouteNode> children = new Dictionary<string, RouteNode>();
     List<string> values = new List<string>();
 
+    /* --------------------------------------------------------------------- */
+    #region プロパティ
+    /* --------------------------------------------------------------------- */
     public Dictionary<string, RouteNode> Children
     { get { return children; } }
 
     public List<string> Value
     { get { return values; } }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
 
-    public RouteNode()
+    /* --------------------------------------------------------------------- */
+    #region コンストラクタ/デストラクタ
+    /* --------------------------------------------------------------------- */
+    public RouteNode() { }
+
+    ~RouteNode()
     {
-
+      Dispose();
     }
+
+    /// <summary>
+    /// 再帰的に子ノード全部開放
+    /// </summary>
+    public void Dispose()
+    {
+      values.Clear();
+      foreach (RouteNode node in children.Values)
+      {
+        node.Dispose();
+      }
+      children.Clear();
+    }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
 
     /* --------------------------------------------------------------------- */
     #region 演算子
@@ -113,20 +142,25 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     #endregion
     /* --------------------------------------------------------------------- */
-
   }
 
   public class Router
   {
     Regex methodParser = new Regex(@"^\s*(get|post|put|delete|head|patch)\s+([a-z0-9_\-:/]*)\s+([a-z0-9_\.\(\)]*)\s*$", RegexOptions.IgnoreCase);
 
+    public delegate void ControllerMethodDelegate(HttpListenerRequest req, HttpListenerResponse res);
+
     RouteNode root = new RouteNode();
+    ControllerMethodDelegate DefaultController { get; set; }
 
     public RouteNode RootNode
     {
       get { return root; }
     }
 
+    /* --------------------------------------------------------------------- */
+    #region コンストラクタ/デストラクタ
+    /* --------------------------------------------------------------------- */
     public Router()
     {
     }
@@ -136,6 +170,39 @@ namespace Komejane.Server
       AddRoutes(routes);
     }
 
+    ~Router()
+    {
+      root.Dispose();
+    }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
+
+    /* --------------------------------------------------------------------- */
+    #region ユーティリティメソッド
+    /* --------------------------------------------------------------------- */
+    public static string[] SplitURIPath(string path)
+    {
+      string[] splited = path.Split('/');
+
+      // 先頭の要素が空ならrootの前に当たる位置だから削除
+      if (splited[0] == string.Empty)
+        return splited.Skip(1).ToArray();
+      else
+        return splited;
+    }
+    public static void ResponseNotFound(HttpListenerResponse res)
+    {
+      res.StatusCode = 404;
+      res.Close();
+    }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
+
+    /* --------------------------------------------------------------------- */
+    #region ルート設定
+    /* --------------------------------------------------------------------- */
     public void AddRoutes(string[] routes)
     {
       foreach (var route in routes)
@@ -154,7 +221,7 @@ namespace Komejane.Server
       string uri = match.Groups[2].Value;
       string controller = match.Groups[3].Value;
 
-      string[] parsedUri = uri.Split('/').Skip(1).ToArray(); // 先頭の要素はrootの前に当たる位置だから削除
+      string[] splitedUri = SplitURIPath(uri);
 
       // add method
       if (!root.isContainer(method))
@@ -162,11 +229,59 @@ namespace Komejane.Server
 
       RouteNode current = root[method];
 
-      foreach (string s in parsedUri)
+      foreach (string s in splitedUri)
       {
         current = current.CreateNode("/" + s);
       }
+
+      // TODO: メソッド周りのパース処理を実装
       current.AddValues(controller.Replace("()", "").Split('.'));
     }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
+
+    /* --------------------------------------------------------------------- */
+    #region ルーティング処理
+    /* --------------------------------------------------------------------- */
+    public void Routing(HttpListenerRequest req, HttpListenerResponse res)
+    {
+      // ルーティングに存在しないメソッド叩いても404しか返さないよ！
+      if (!root.isContainer(req.HttpMethod.ToUpper()))
+      {
+        ResponseNotFound(res);
+        return;
+      }
+
+      string[] splitedUri = SplitURIPath(req.Url.AbsolutePath);
+
+      // ルーティングを検索
+      RouteNode current = root[req.HttpMethod.ToUpper()];
+      foreach(string dir in splitedUri)
+      {
+        if (current.isContainer(dir))
+          current = current[dir];
+        else
+        {
+          // TODO: ファイルへのリクエストを確認した上でファイルがなければ404を返すようにする
+          //       もしくはファイルリクエスト用のコントローラへ制御を委譲
+          ResponseNotFound(res);
+          return;
+        }
+      }
+
+      // コントローラ未登録のパスだった場合は404
+      if (current.Value.Count < 1)
+      {
+        ResponseNotFound(res);
+        return;
+      }
+
+      // TODO: 登録されたコントローラを呼び出す
+      res.Close();
+    }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
   }
 }
