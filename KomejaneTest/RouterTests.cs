@@ -46,5 +46,11 @@ namespace Komejane.Server.Tests
         "         [/stream] => <WebSocketController, stream>"
       }));
     }
+
+    [TestMethod()]
+    public void SplitURITest()
+    {
+      Assert.Fail();
+    }
   }
 }

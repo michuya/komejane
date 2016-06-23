@@ -53,7 +53,7 @@
       <DependentUpon>ControlForm.cs</DependentUpon>
     </Compile>
     <Compile Include="FileUtility.cs" />
-    <Compile Include="Router.cs" />
+    <Compile Include="Server\Router.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Komejane.cs" />
     <Compile Include="LogForm.cs">
@@ -63,7 +63,7 @@
       <DependentUpon>LogForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Http.cs" />
+    <Compile Include="Server\Http.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ControlForm.resx">
@@ -74,7 +74,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Server\" />
+    <Folder Include="Resource\web\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram1.cd" />
