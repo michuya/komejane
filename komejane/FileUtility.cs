@@ -4,10 +4,12 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
+using System.Reflection;
 
 namespace Komejane
 {
-  class FileUtility
+  public class FileUtility
   {
     /* --------------------------------------------------------------------- */
     #region FindMimeFromData
@@ -47,7 +49,7 @@ namespace Komejane
         return null;
     }
 
-    public static string FindMimeFromStream(System.IO.StreamReader stream, string mimeProposed = null)
+    public static string FindMimeFromStream(StreamReader stream, string mimeProposed = null)
     {
       char[] readBuff = new char[256];
       int readBytes = stream.ReadBlock(readBuff, 0, 256);
@@ -75,5 +77,60 @@ namespace Komejane
     /* --------------------------------------------------------------------- */
     #endregion
     /* --------------------------------------------------------------------- */
+
+    /* --------------------------------------------------------------------- */
+    #region リソース制御
+    /* --------------------------------------------------------------------- */
+    /// <summary>
+    /// 埋め込みリソースを指定したパスへファイルとして出力する
+    /// </summary>
+    /// <param name="namespace">リソースの名前空間</param>
+    /// <param name="resourceName">リソース名</param>
+    /// <param name="outputDir">出力先ディレクトリ</param>
+    /// <param name="outputFilename">出力時のファイル名(省略時はリソース名を使用)</param>
+    /// <param name="overwrite">上書きをするか否か。デフォルトはtrue</param>
+    public static async Task ResourceWriter(string @namespace, string resourceName, string outputDir, string outputFilename = null, bool overwrite = true)
+    {
+      if (string.IsNullOrWhiteSpace(@namespace) || string.IsNullOrWhiteSpace(resourceName) || string.IsNullOrWhiteSpace(outputDir)) {
+        return;
+      }
+
+      string outputPath = Path.Combine(outputDir, (string.IsNullOrWhiteSpace(outputFilename) ? resourceName : outputFilename));
+
+      // ファイル上書きフラグが無い場合は出力ファイルが被った場合に例外で失敗させる
+      if (!overwrite && File.Exists(outputPath))
+        throw new IOException("File already exists");
+
+      // 現在実行中のアセンブリを取得
+      var assm = Assembly.GetExecutingAssembly();
+
+      // リソースとして埋め込んだ画像ファイルのストリームを取得
+      using (var resource = assm.GetManifestResourceStream(string.Format("{0}.{1}", @namespace, resourceName)))
+      {
+        // リソースの取得に失敗している場合は例外
+        if (resource == null) throw new FileNotFoundException();
+
+        // ディレクトリがなかったら作成
+        if (!Directory.Exists(outputDir))
+          Directory.CreateDirectory(outputDir);
+
+        using (FileStream writer = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+          // ストリームから書き込む
+          await resource.CopyToAsync(writer);
+        }
+      }
+    }
+    public static string[] GetResources()
+    {
+      // 現在実行中のアセンブリを取得
+      var assm = Assembly.GetExecutingAssembly();
+
+      return assm.GetManifestResourceNames();
+    }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
+
   }
 }

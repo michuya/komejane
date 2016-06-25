@@ -78,9 +78,9 @@
     <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resource\web\index.html" />
-    <Content Include="Resource\web\komejane.js" />
-    <Content Include="Resource\web\style.css" />
+    <EmbeddedResource Include="Resource\web\index.html" />
+    <EmbeddedResource Include="Resource\web\komejane.js" />
+    <EmbeddedResource Include="Resource\web\style.css" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

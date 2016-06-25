@@ -50,6 +50,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="FileUtilityTests.cs" />
     <Compile Include="RouteNodeTests.cs" />
     <Compile Include="RouterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -59,6 +60,20 @@
       <Project>{ae3678ec-6a62-484b-a054-368d25d6a858}</Project>
       <Name>komejane</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\komejane\Resource\web\index.html">
+      <Link>Resource\web\index.html</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\komejane\Resource\web\komejane.js">
+      <Link>Resource\web\komejane.js</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\komejane\Resource\web\style.css">
+      <Link>Resource\web\style.css</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
