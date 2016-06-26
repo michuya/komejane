@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
+using System.Reflection;
 
 using Komejane.Server;
 
@@ -52,6 +54,49 @@ namespace Komejane
     public Komejane()
     {
 
+    }
+
+    private async void InitializeWebDirectory()
+    {
+      string webDir = Path.Combine(Config.Instance.DllDirectory, Config.Instance.WebRootDirectory);
+
+      if (Directory.Exists(webDir))
+      {
+        if (File.Exists(Path.Combine(webDir, Config.Instance.WebIndex)))
+          return;
+
+        else
+        {
+          // index.htmlだけチェック
+          var dlgResult = System.Windows.Forms.MessageBox.Show("Webディレクトリに" + Config.Instance.WebIndex + "が見つかりません。\n初期ファイルを設置しますか？", "こめじゃね！", System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.Warning);
+
+          if (dlgResult == System.Windows.Forms.DialogResult.Yes)
+            await FileUtility.ResourceWriter("Komejane.Resource.web", "index.html", Path.Combine(webDir, Config.Instance.WebIndex));
+        }
+      }
+      else
+      {
+        string[] webResources = {
+          "index.html",
+          "komejane.js",
+          "style.css"
+        };
+
+        // 初期ディレクトリを生成
+        Directory.CreateDirectory(webDir);
+
+        // リソース一式を書き出す
+        // TODO: webディレクトリ以下のディレクトリ構造を自動で再現できるようにする
+        foreach (string rcname in webResources)
+        {
+          await FileUtility.ResourceWriter("Komejane.Resource.web", rcname, webDir);
+        }
+      }
+    }
+
+    public void Initialize()
+    {
+      InitializeWebDirectory();
     }
 
     public bool IsAlive { get; protected set; }

@@ -13,6 +13,7 @@ namespace KomejaneUserTest
     {
       Komejane.Komejane komejane = new Komejane.Komejane();
 
+      komejane.Initialize();
       komejane.Run();
     }
   }
