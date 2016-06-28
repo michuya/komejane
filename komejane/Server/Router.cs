@@ -151,7 +151,7 @@ namespace Komejane.Server
     public delegate void ControllerMethodDelegate(HttpListenerRequest req, HttpListenerResponse res);
 
     RouteNode root = new RouteNode();
-    ControllerMethodDelegate DefaultController { get; set; }
+    public ControllerMethodDelegate DefaultController { get; set; }
 
     public RouteNode RootNode
     {
@@ -181,16 +181,6 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     #region ユーティリティメソッド
     /* --------------------------------------------------------------------- */
-    public static string[] SplitURIPath(string path)
-    {
-      string[] splited = path.Split('/');
-
-      // 先頭の要素が空ならrootの前に当たる位置だから削除
-      if (splited[0] == string.Empty)
-        return splited.Skip(1).ToArray();
-      else
-        return splited;
-    }
     public static void ResponseNotFound(HttpListenerResponse res)
     {
       res.StatusCode = 404;
@@ -218,10 +208,8 @@ namespace Komejane.Server
       if (match.Groups.Count < 4) throw new ArgumentException();
 
       string method = match.Groups[1].Value.ToUpper();
-      string uri = match.Groups[2].Value;
+      Uri uri = new Uri("http://example.com" + match.Groups[2].Value);
       string controller = match.Groups[3].Value;
-
-      string[] splitedUri = SplitURIPath(uri);
 
       // add method
       if (!root.isContainer(method))
@@ -229,9 +217,9 @@ namespace Komejane.Server
 
       RouteNode current = root[method];
 
-      foreach (string s in splitedUri)
+      foreach (string s in uri.Segments)
       {
-        current = current.CreateNode("/" + s);
+        current = current.CreateNode(s);
       }
 
       // TODO: メソッド周りのパース処理を実装
@@ -253,11 +241,9 @@ namespace Komejane.Server
         return;
       }
 
-      string[] splitedUri = SplitURIPath(req.Url.AbsolutePath);
-
       // ルーティングを検索
       RouteNode current = root[req.HttpMethod.ToUpper()];
-      foreach(string dir in splitedUri)
+      foreach(string dir in req.Url.Segments)
       {
         if (current.isContainer(dir))
           current = current[dir];
