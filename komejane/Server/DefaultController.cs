@@ -6,9 +6,9 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Komejane.Server
+namespace Komejane.Server.Controller
 {
-  class DefaultController : BasicController
+  public class DefaultController : BasicController
   {
     string WebRootDirectory { get; set; }
     string WebIndex { get; set; }
