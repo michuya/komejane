@@ -8,9 +8,30 @@ using System.Net;
 
 using System.Text.RegularExpressions;
 
+using Komejane.Server.Controller;
+
 namespace Komejane.Server
 {
-  // simple tree node
+  /// <summary>
+  /// コントローラ情報
+  /// </summary>
+  public struct RouteControllerInfo
+  {
+    public string Name { get; private set; }
+    public string[] Options { get; private set; }
+    public string Method { get; private set; }
+
+    public RouteControllerInfo(string name, string[] opt, string method = null)
+    {
+      Name = name;
+      Options = opt;
+      Method = method;
+    }
+  }
+
+  /// <summary>
+  /// ルーティング探索木用
+  /// </summary>
   public class RouteNode
   {
     Dictionary<string, RouteNode> children = new Dictionary<string, RouteNode>();
@@ -24,6 +45,8 @@ namespace Komejane.Server
 
     public List<string> Value
     { get { return values; } }
+
+    public RouteControllerInfo Controller { get; protected set; }
     /* --------------------------------------------------------------------- */
     #endregion
     /* --------------------------------------------------------------------- */
@@ -94,6 +117,12 @@ namespace Komejane.Server
       this.values.AddRange(values);
       return this;
     }
+
+    public RouteControllerInfo SetController(RouteControllerInfo info)
+    {
+      Controller = info;
+      return info;
+    }
     /* --------------------------------------------------------------------- */
     #endregion
     /* --------------------------------------------------------------------- */
@@ -144,6 +173,9 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
   }
 
+  /// <summary>
+  /// ルーティング処理する奴
+  /// </summary>
   public class Router
   {
     Regex methodParser = new Regex(@"^\s*(get|post|put|delete|head|patch)\s+([a-z0-9_\-:/]*)\s+([a-z0-9_\.\(\)]*)\s*$", RegexOptions.IgnoreCase);
@@ -152,6 +184,8 @@ namespace Komejane.Server
 
     RouteNode root = new RouteNode();
     public ControllerMethodDelegate DefaultController { get; set; }
+
+    Dictionary<string, ControllerWrapper> Controllers = new Dictionary<string, ControllerWrapper>();
 
     public RouteNode RootNode
     {
@@ -185,6 +219,52 @@ namespace Komejane.Server
     {
       res.StatusCode = 404;
       res.Close();
+    }
+    public static RouteControllerInfo ControllerParser(string ctrl)
+    {
+      string[] splitCtrl = ctrl.Split('.');
+
+      if (splitCtrl.Length > 1) throw new ArgumentException("メソッドチェーンには対応していません。");
+
+      // コントローラをパース
+      var ctrlMatch = Regex.Match(splitCtrl[0], @"([_a-zA-Z][_a-zA-Z0-9]+)(\(.*?\))?");
+
+      if (ctrlMatch.Groups.Count < 2) throw new ArgumentException("コントローラ名が不正です。");
+
+      // コントローラ情報をRouteControllerInfo用に変換
+      string controller = ctrlMatch.Groups[1].Value;
+      string[] controllerArgs = null;
+
+      // パラメータがある場合はそれも変換
+      if (ctrlMatch.Groups.Count > 2)
+      {
+        // バギーな引数パーサー。引数内にカンマが含まれた場合に狂う。
+        // TODO: バギーな処理を修正
+        controllerArgs = Regex.Split(ctrlMatch.Groups[2].Value.Trim("() ".ToCharArray()), @"\s*,\s*");
+
+        // 引数フォーマットのチェックと修正
+        if (controllerArgs.Length == 1 && string.IsNullOrWhiteSpace(controllerArgs[0]))
+          controllerArgs = null;
+        else if (controllerArgs.Contains("")) throw new ArgumentException("コントローラのパラメータが不正です。");
+        else controllerArgs = controllerArgs.Select((s) => s.Trim("\"".ToCharArray())).ToArray();
+      }
+
+      // メソッドがある場合はsplitの結果が2個になる
+      string method = null;
+      if (splitCtrl.Length > 1)
+      {
+        // メソッド名をパース
+        var m = Regex.Match(splitCtrl[1], @"([_a-zA-Z][_a-zA-Z0-9]+)(\(\))?");
+
+        // メソッドのフォーマットに異常がなければ通常文字列に変換
+        if (m.Groups.Count == 2)
+        {
+          method = m.Groups[1].Value;
+        } else throw new ArgumentException("メソッド名が不正です。");
+      }
+
+      // パースした物を入れたRouteControllerInfoを作って返す
+      return new RouteControllerInfo(controller, controllerArgs, method);
     }
     /* --------------------------------------------------------------------- */
     #endregion
@@ -242,11 +322,17 @@ namespace Komejane.Server
       }
 
       // ルーティングを検索
+      // TODO: コントローラ探索の仕様をもっと柔軟にする
       RouteNode current = root[req.HttpMethod.ToUpper()];
+      string[] controller = { "DefaultController" };
       foreach(string dir in req.Url.Segments)
       {
         if (current.isContainer(dir))
+        {
           current = current[dir];
+          if (current.Value.Count > 0)
+            controller = current.Value.ToArray();
+        }
         else
         {
           // TODO: ファイルへのリクエストを確認した上でファイルがなければ404を返すようにする
@@ -256,15 +342,43 @@ namespace Komejane.Server
         }
       }
 
-      // コントローラ未登録のパスだった場合は404
-      if (current.Value.Count < 1)
+      // コントローラがうまく取得できなかった場合は強制404
+      if (controller == null || controller.Length < 1)
       {
         ResponseNotFound(res);
         return;
       }
 
       // TODO: 登録されたコントローラを呼び出す
-      res.Close();
+      ControllerWrapper wrapper = GetController(controller[0]);
+      if (controller.Length > 1)
+        wrapper.CallMethod(controller[1], req, res);
+      else
+        wrapper.CallMethod("index", req, res);
+
+      // 念のためストリームが閉じてなかったらクローズしとく
+      if (res.OutputStream.CanWrite) res.Close();
+    }
+    /* --------------------------------------------------------------------- */
+    #endregion
+    /* --------------------------------------------------------------------- */
+
+    /* --------------------------------------------------------------------- */
+    #region コントローラー関連
+    /* --------------------------------------------------------------------- */
+    protected void AddController(string controller)
+    {
+      Controllers.Add(controller, new ControllerWrapper(controller, "Komejane.Server.Controller"));
+    }
+
+    protected ControllerWrapper GetController(string controller)
+    {
+      if (!Controllers.ContainsKey(controller))
+      {
+        AddController(controller);
+      }
+
+      return Controllers[controller];
     }
     /* --------------------------------------------------------------------- */
     #endregion

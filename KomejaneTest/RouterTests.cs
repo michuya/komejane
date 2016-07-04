@@ -57,37 +57,37 @@ namespace Komejane.Server.Tests
     }
 
     [TestMethod()]
-    public void SplitURITest()
-    {
-      Dictionary<string, string[]> urls = new Dictionary<string, string[]>() {
-        { "/", new string[] { "/" } },
-        { "/api", new string[] { "/api" } },
-        { "/api/", new string[] { "/api" } },
-        { "/_/./.html", new string[] { "/_", "/.", "/.html" } },
-        { "/index.html", new string[] { "/", "index.html" } },
-        { "/a/b/c/d/e/f/g/", new string[] { "/a", "/b", "/c", "/d", "/e", "/f", "/g" } },
-      };
-
-      foreach (var pair in urls)
-      {
-        var splited = Router.SplitURIPath(pair.Key);
-        try
-        {
-          CollectionAssert.AreEqual(splited, pair.Value);
-        }
-        catch (AssertFailedException ex)
-        {
-          System.Diagnostics.Debug.WriteLine("splited = \"" + string.Join("\", \"", splited) + "\"");
-          System.Diagnostics.Debug.WriteLine("sample = \"" + string.Join("\", \"", pair.Value) + "\"");
-          throw ex;
-        }
-      }
-    }
-
-    [TestMethod()]
     public void RoutingTest()
     {
       Assert.Fail();
+    }
+
+    [TestMethod()]
+    public void ControllerParserTest()
+    {
+      Dictionary<string, RouteControllerInfo> testDatas = new Dictionary<string, RouteControllerInfo>()
+      {
+        { "DefaultController", new RouteControllerInfo("DefaultController", null) },
+        { "DefaultController.index", new RouteControllerInfo("DefaultController", null, "index") },
+        { "DefaultController.index()", new RouteControllerInfo("DefaultController", null, "index") },
+        { "DefaultController()", new RouteControllerInfo("DefaultController", null) },
+        { "DefaultController().index", new RouteControllerInfo("DefaultController", null, "index") },
+        { "DefaultController().index()", new RouteControllerInfo("DefaultController", null, "index") },
+        { "DefaultController(\"a\", \"b\")", new RouteControllerInfo("DefaultController", new string[] { "a", "b" }) },
+        { "DefaultController(\"a\", \"b\").index", new RouteControllerInfo("DefaultController", new string[] { "a", "b" }, "index") },
+        { "DefaultController(\"a\", \"b\").index()", new RouteControllerInfo("DefaultController", new string[] { "a", "b" }, "index") },
+        { "DefaultController(\"c\")", new RouteControllerInfo("DefaultController", new string[] { "c" }) },
+        { "DefaultController(\"c\").index", new RouteControllerInfo("DefaultController", new string[] { "c" }, "index") },
+        { "DefaultController(\"c\").index()", new RouteControllerInfo("DefaultController", new string[] { "c" }, "index") }
+      };
+
+      foreach (var pair in testDatas)
+      {
+        var ctrl = Router.ControllerParser(pair.Key);
+        Assert.AreEqual(ctrl.Name, pair.Value.Name);
+        Assert.AreEqual(ctrl.Method, pair.Value.Method);
+        CollectionAssert.AreEqual(ctrl.Options, pair.Value.Options);
+      }
     }
   }
 }
