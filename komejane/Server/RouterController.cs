@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Reflection;
 
-namespace Komejane.Server
+namespace Komejane.Server.Controller
 {
   public class ControllerWrapper
   {
+    volatile object lockObj = new object();
     IRouterController controller = null;
-
 
     public ControllerWrapper(string className, string @namespace = null)
     {
@@ -26,10 +26,10 @@ namespace Komejane.Server
         (string.IsNullOrWhiteSpace(@namespace)) ? "" : "."
       );
       
-      lock (controller)
+      lock (lockObj)
       {
         // アセンブリが指定されてた場合はアセンブリをロードしてインスタンスを生成する
-        if (string.IsNullOrWhiteSpace(asmName))
+        if (!string.IsNullOrWhiteSpace(asmName))
         {
           Assembly asm = Assembly.LoadFrom(asmName);
 
@@ -39,8 +39,8 @@ namespace Komejane.Server
         {
           // Typeを取得する
           Type t = Type.GetType(@class);
-
-          controller = (IRouterController)Activator.CreateInstance(t);
+          string s = typeof(DefaultController).ToString();
+          controller = (IRouterController)Activator.CreateInstance(typeof(DefaultController));
         }
       }
     }
@@ -50,7 +50,7 @@ namespace Komejane.Server
       // コントローラが未設定の場合は処理しない
       if (controller == null) return;
 
-      lock (controller)
+      lock (lockObj)
       {
         // インスタンスのタイプを取得
         Type t = controller.GetType();
