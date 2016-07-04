@@ -45,7 +45,6 @@ namespace Komejane
     string webIndex = "index.html";
     string[] webRoutes =
     {
-      "get /api DefaultController",
       "get /api/wsInfo WebSocketController.info()",
       "get /api/config ConfigController",
       "get /stream WebSocketController.stream()"
