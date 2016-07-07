@@ -27,6 +27,21 @@ namespace Komejane.Server
       Options = opt;
       Method = method;
     }
+
+    public static bool IsEmpty(RouteControllerInfo target)
+    {
+      return string.IsNullOrWhiteSpace(target.Name);
+    }
+
+    public override string ToString()
+    {
+      if (IsEmpty(this)) return "";
+
+      string ret = string.Format("{0}({1})", Name, (Options != null) ? string.Join(", ", Options) : "");
+      if (!string.IsNullOrWhiteSpace(Method))
+        ret += "." + Method + "()";
+      return ret;
+    }
   }
 
   /// <summary>
@@ -147,7 +162,7 @@ namespace Komejane.Server
 
       if (children.Count == 0)
       {
-        return string.Format("<{0}>", string.Join(", ", values));
+        return string.Format("<{0}>", Controller.ToString());
       }
 
       bool first = true;
@@ -163,8 +178,8 @@ namespace Komejane.Server
         first = false;
       }
 
-      if (values.Count > 0)
-        cache = string.Format("{0}\n<{1}>", cache, string.Join(", ", values));
+      if (!RouteControllerInfo.IsEmpty(Controller))
+        cache = string.Format("{0}\n<{1}>", cache, Controller.ToString());
 
       return cache;
     }
@@ -224,7 +239,7 @@ namespace Komejane.Server
     {
       string[] splitCtrl = ctrl.Split('.');
 
-      if (splitCtrl.Length > 1) throw new ArgumentException("メソッドチェーンには対応していません。");
+      if (splitCtrl.Length > 2) throw new ArgumentException("メソッドチェーンには対応していません。");
 
       // コントローラをパース
       var ctrlMatch = Regex.Match(splitCtrl[0], @"([_a-zA-Z][_a-zA-Z0-9]+)(\(.*?\))?");
@@ -257,10 +272,12 @@ namespace Komejane.Server
         var m = Regex.Match(splitCtrl[1], @"([_a-zA-Z][_a-zA-Z0-9]+)(\(\))?");
 
         // メソッドのフォーマットに異常がなければ通常文字列に変換
-        if (m.Groups.Count == 2)
+        if (m.Groups.Count == 3)
         {
+          if (!string.IsNullOrWhiteSpace(m.Groups[2].Value.Trim("() ".ToCharArray())))
+            throw new ArgumentException("メソッドの引数は利用できません。");
           method = m.Groups[1].Value;
-        } else throw new ArgumentException("メソッド名が不正です。");
+        } else throw new ArgumentException("メソッド名に不正な文字が含まれています。");
       }
 
       // パースした物を入れたRouteControllerInfoを作って返す
@@ -302,8 +319,8 @@ namespace Komejane.Server
         current = current.CreateNode(s);
       }
 
-      // TODO: メソッド周りのパース処理を実装
-      current.AddValues(controller.Replace("()", "").Split('.'));
+      // コントローラ情報を登録
+      current.SetController(Router.ControllerParser(controller));
     }
     /* --------------------------------------------------------------------- */
     #endregion
@@ -350,7 +367,7 @@ namespace Komejane.Server
       }
 
       // TODO: 登録されたコントローラを呼び出す
-      ControllerWrapper wrapper = GetController(controller[0]);
+      ControllerWrapper wrapper = GetController(current.Controller);
       if (controller.Length > 1)
         wrapper.CallMethod(controller[1], req, res);
       else
@@ -366,19 +383,21 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     #region コントローラー関連
     /* --------------------------------------------------------------------- */
-    protected void AddController(string controller)
+    protected void AddController(RouteControllerInfo controller)
     {
-      Controllers.Add(controller, new ControllerWrapper(controller, "Komejane.Server.Controller"));
+      Controllers.Add(controller.Name, new ControllerWrapper(controller.Name,
+        constructorArgs:(controller.Options.Length > 0) ? controller.Options : null,
+        @namespace:"Komejane.Server.Controller"));
     }
 
-    protected ControllerWrapper GetController(string controller)
+    protected ControllerWrapper GetController(RouteControllerInfo controller)
     {
-      if (!Controllers.ContainsKey(controller))
+      if (!Controllers.ContainsKey(controller.Name))
       {
         AddController(controller);
       }
 
-      return Controllers[controller];
+      return Controllers[controller.Name];
     }
     /* --------------------------------------------------------------------- */
     #endregion
