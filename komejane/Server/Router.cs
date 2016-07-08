@@ -74,11 +74,13 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     public Router()
     {
+      // デフォルトコントローラを作成
       DefaultController = new RouteControllerInfo("DefaultController", new string[] {
         System.IO.Path.Combine(Config.Instance.DllDirectory, Config.Instance.WebRootDirectory),
         Config.Instance.WebIndex
       });
 
+      // デフォルトコントローラにMIME辞書を登録
       DefaultController dc = (DefaultController)AddController(DefaultController).ControllerInstance;
       dc.MimeDictionary = Config.Instance.MimeFromExtentionDictionary;
     }
@@ -104,11 +106,13 @@ namespace Komejane.Server
       res.StatusCode = 404;
       res.Close();
     }
+
     public static void ResponseServerError(HttpListenerResponse res)
     {
       res.StatusCode = 500;
       res.Close();
     }
+
     public static RouteControllerInfo ControllerParser(string ctrl)
     {
       string[] splitCtrl = ctrl.Split('.');
@@ -178,20 +182,20 @@ namespace Komejane.Server
 
       if (match.Groups.Count < 4) throw new ArgumentException();
 
+      // メソッド、URLパス、コントローラを分割
       string method = match.Groups[1].Value.ToUpper();
-      Uri uri = new Uri("http://example.com" + match.Groups[2].Value);
+      Uri uri = new Uri("http://example.com" + match.Groups[2].Value); // ドメイン名はダミー
       string controller = match.Groups[3].Value;
 
-      // add method
+      // HTTPメソッドをrootに追加
       if (!root.isContainer(method))
         root.AddNode(method, new RouteNode());
 
+      // HTTPメソッド下のツリーにノードを追加
       RouteNode current = root[method];
 
       foreach (string s in uri.Segments)
-      {
         current = current.CreateNode(s);
-      }
 
       // コントローラ情報を登録
       current.SetController(Router.ControllerParser(controller));
