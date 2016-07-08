@@ -233,6 +233,11 @@ namespace Komejane.Server
       res.StatusCode = 404;
       res.Close();
     }
+    public static void ResponseServerError(HttpListenerResponse res)
+    {
+      res.StatusCode = 500;
+      res.Close();
+    }
     public static RouteControllerInfo ControllerParser(string ctrl)
     {
       string[] splitCtrl = ctrl.Split('.');
@@ -365,7 +370,13 @@ namespace Komejane.Server
 
       // コントローラを呼び出す
       ControllerWrapper wrapper = GetController(controller);
-      if (string.IsNullOrWhiteSpace(controller.Method))
+
+      if (wrapper == null)
+      {
+        ResponseServerError(res);
+        return;
+      }
+      else if (string.IsNullOrWhiteSpace(controller.Method))
         wrapper.CallMethod("index", req, res);
       else
         wrapper.CallMethod(controller.Method, req, res);
@@ -383,13 +394,17 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     protected ControllerWrapper AddController(RouteControllerInfo controller)
     {
-      ControllerWrapper instance = new ControllerWrapper(controller.Name,
-        constructorArgs: (controller.Options.Length > 0) ? controller.Options : null,
-        @namespace: "Komejane.Server.Controller");
+      try
+      {
+        ControllerWrapper instance = new ControllerWrapper(controller.Name,
+          constructorArgs: (controller.Options.Length > 0) ? controller.Options : null,
+          @namespace: "Komejane.Server.Controller");
 
-      Controllers.Add(controller.Name, instance);
+        Controllers.Add(controller.Name, instance);
 
-      return instance;
+        return instance;
+      }
+      catch (ArgumentException) { return null; }
     }
 
     protected ControllerWrapper GetController(RouteControllerInfo controller)
@@ -399,7 +414,7 @@ namespace Komejane.Server
 
       if (!Controllers.ContainsKey(controller.Name))
       {
-        AddController(controller);
+        if (AddController(controller) == null) return null;
       }
 
       return Controllers[controller.Name];
