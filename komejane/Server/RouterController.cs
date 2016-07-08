@@ -11,14 +11,14 @@ namespace Komejane.Server.Controller
   public class ControllerWrapper
   {
     volatile object lockObj = new object();
-    IRouterController controller = null;
+    public IRouterController ControllerInstance { get; protected set; }
 
-    public ControllerWrapper(string className, string @namespace = null)
+    public ControllerWrapper(string className, object[] constructorArgs = null, string @namespace = null)
     {
-      CreateInstance(className, @namespace);
+      CreateInstance(className, args:constructorArgs, @namespace:@namespace);
     }
 
-    public void CreateInstance(string className, string @namespace = null, string asmName = null)
+    public void CreateInstance(string className, object[] args = null, string @namespace = null, string asmName = null)
     {
       string @class = string.Format("{0}{2}{1}",
         @namespace,
@@ -33,14 +33,17 @@ namespace Komejane.Server.Controller
         {
           Assembly asm = Assembly.LoadFrom(asmName);
 
-          controller = (IRouterController)asm.CreateInstance(@class);
+          ControllerInstance = (IRouterController)asm.CreateInstance(@class);
         }
         else
         {
           // Typeを取得する
           Type t = Type.GetType(@class);
           string s = typeof(DefaultController).ToString();
-          controller = (IRouterController)Activator.CreateInstance(typeof(DefaultController));
+          if (args == null)
+            ControllerInstance = (IRouterController)Activator.CreateInstance(t);
+          else
+            ControllerInstance = (IRouterController)Activator.CreateInstance(t, args);
         }
       }
     }
@@ -48,18 +51,18 @@ namespace Komejane.Server.Controller
     public void CallMethod(string method, HttpListenerRequest req, HttpListenerResponse res)
     {
       // コントローラが未設定の場合は処理しない
-      if (controller == null) return;
+      if (ControllerInstance == null) return;
 
       lock (lockObj)
       {
         // インスタンスのタイプを取得
-        Type t = controller.GetType();
+        Type t = ControllerInstance.GetType();
 
         // メソッド情報を取得
         System.Reflection.MethodInfo mi = t.GetMethod(method);
 
         // メソッドを呼び出す
-        mi.Invoke(controller, new object[] { req, res });
+        mi.Invoke(ControllerInstance, new object[] { req, res });
       }
     }
   }
