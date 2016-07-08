@@ -18,13 +18,21 @@ namespace Komejane.Server
   public struct RouteControllerInfo
   {
     public string Name { get; private set; }
-    public string[] Options { get; private set; }
     public string Method { get; private set; }
+    string[] _options;
+    public string[] Options { get {
+        if (_options == null) return new string[0];
+        else return _options;
+      }
+      private set {
+        _options = value;
+      }
+    }
 
     public RouteControllerInfo(string name, string[] opt, string method = null)
     {
       Name = name;
-      Options = opt;
+      _options = opt;
       Method = method;
     }
 
@@ -57,9 +65,6 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     public Dictionary<string, RouteNode> Children
     { get { return children; } }
-
-    public List<string> Value
-    { get { return values; } }
 
     public RouteControllerInfo Controller { get; protected set; }
     /* --------------------------------------------------------------------- */
@@ -119,18 +124,6 @@ namespace Komejane.Server
       else
         children.Add(key, node);
       return node;
-    }
-
-    public RouteNode AddValue(string value)
-    {
-      values.Add(value);
-      return this;
-    }
-
-    public RouteNode AddValues(string[] values)
-    {
-      this.values.AddRange(values);
-      return this;
     }
 
     public RouteControllerInfo SetController(RouteControllerInfo info)
@@ -195,10 +188,8 @@ namespace Komejane.Server
   {
     Regex methodParser = new Regex(@"^\s*(get|post|put|delete|head|patch)\s+([a-z0-9_\-:/]*)\s+([a-z0-9_\.\(\)]*)\s*$", RegexOptions.IgnoreCase);
 
-    public delegate void ControllerMethodDelegate(HttpListenerRequest req, HttpListenerResponse res);
-
     RouteNode root = new RouteNode();
-    public ControllerMethodDelegate DefaultController { get; set; }
+    public RouteControllerInfo DefaultController { get; set; }
 
     Dictionary<string, ControllerWrapper> Controllers = new Dictionary<string, ControllerWrapper>();
 
@@ -212,9 +203,16 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     public Router()
     {
+      DefaultController = new RouteControllerInfo("DefaultController", new string[] {
+        System.IO.Path.Combine(Config.Instance.DllDirectory, Config.Instance.WebRootDirectory),
+        Config.Instance.WebIndex
+      });
+
+      DefaultController dc = (DefaultController)AddController(DefaultController).ControllerInstance;
+      dc.MimeDictionary = Config.Instance.MimeFromExtentionDictionary;
     }
 
-    public Router(string[] routes)
+    public Router(string[] routes):this()
     {
       AddRoutes(routes);
     }
@@ -341,40 +339,40 @@ namespace Komejane.Server
       // ルーティングを検索
       // TODO: コントローラ探索の仕様をもっと柔軟にする
       RouteNode current = root[req.HttpMethod.ToUpper()];
-      string[] controller = { "DefaultController" };
+      RouteControllerInfo controller = DefaultController;
       foreach(string dir in req.Url.Segments)
       {
         if (current.isContainer(dir))
         {
           current = current[dir];
-          if (current.Value.Count > 0)
-            controller = current.Value.ToArray();
+          if (!RouteControllerInfo.IsEmpty(current.Controller))
+            controller = current.Controller;
         }
         else
         {
-          // TODO: ファイルへのリクエストを確認した上でファイルがなければ404を返すようにする
-          //       もしくはファイルリクエスト用のコントローラへ制御を委譲
-          ResponseNotFound(res);
-          return;
+          // ファイルリクエスト用のコントローラへ制御を委譲
+          controller = DefaultController;
+          break;
         }
       }
 
       // コントローラがうまく取得できなかった場合は強制404
-      if (controller == null || controller.Length < 1)
+      if (RouteControllerInfo.IsEmpty(controller))
       {
         ResponseNotFound(res);
         return;
       }
 
-      // TODO: 登録されたコントローラを呼び出す
-      ControllerWrapper wrapper = GetController(current.Controller);
-      if (controller.Length > 1)
-        wrapper.CallMethod(controller[1], req, res);
-      else
+      // コントローラを呼び出す
+      ControllerWrapper wrapper = GetController(controller);
+      if (string.IsNullOrWhiteSpace(controller.Method))
         wrapper.CallMethod("index", req, res);
+      else
+        wrapper.CallMethod(controller.Method, req, res);
 
       // 念のためストリームが閉じてなかったらクローズしとく
-      if (res.OutputStream.CanWrite) res.Close();
+      try { if (res.OutputStream.CanWrite) res.Close(); }
+      catch (ObjectDisposedException) { }
     }
     /* --------------------------------------------------------------------- */
     #endregion
@@ -383,15 +381,22 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     #region コントローラー関連
     /* --------------------------------------------------------------------- */
-    protected void AddController(RouteControllerInfo controller)
+    protected ControllerWrapper AddController(RouteControllerInfo controller)
     {
-      Controllers.Add(controller.Name, new ControllerWrapper(controller.Name,
-        constructorArgs:(controller.Options.Length > 0) ? controller.Options : null,
-        @namespace:"Komejane.Server.Controller"));
+      ControllerWrapper instance = new ControllerWrapper(controller.Name,
+        constructorArgs: (controller.Options.Length > 0) ? controller.Options : null,
+        @namespace: "Komejane.Server.Controller");
+
+      Controllers.Add(controller.Name, instance);
+
+      return instance;
     }
 
     protected ControllerWrapper GetController(RouteControllerInfo controller)
     {
+      if (RouteControllerInfo.IsEmpty(controller))
+        return null;
+
       if (!Controllers.ContainsKey(controller.Name))
       {
         AddController(controller);
