@@ -27,17 +27,17 @@ namespace Komejane.Server.Tests
       Router router = new Router();
 
       router.AddRoute(routes[0]);
-      Assert.AreEqual<string>(router.RootNode.ToString(), @"[GET] => [/] => <DefaultController>");
+      Assert.AreEqual<string>(router.RootNode.ToString(), @"[GET] => [/] => <DefaultController()>");
 
       router = new Router();
 
       router.AddRoute(routes[1]);
-      Assert.AreEqual<string>(router.RootNode.ToString(), @"[GET] => [/] => [api] => <DefaultController, api>");
+      Assert.AreEqual<string>(router.RootNode.ToString(), @"[GET] => [/] => [api] => <DefaultController().api()>");
 
       router = new Router();
 
       router.AddRoute(routes[2]);
-      Assert.AreEqual<string>(router.RootNode.ToString(), @"[GET] => [/] => [api/] => [wsInfo] => <WebSocketController, info>");
+      Assert.AreEqual<string>(router.RootNode.ToString(), @"[GET] => [/] => [api/] => [wsInfo] => <WebSocketController().info()>");
     }
 
     [TestMethod()]
@@ -48,11 +48,11 @@ namespace Komejane.Server.Tests
       router.AddRoutes(routes);
 
       Assert.AreEqual<string>(router.RootNode.ToString(), string.Join("\n", new string[] {
-        "[GET] => [/] => [api] ====> <DefaultController, api>",
-        "                [api/] ===> [wsInfo] => <WebSocketController, info>",
-        "                            [config] => <ConfigController>",
-        "                [stream] => <WebSocketController, stream>",
-        "                <DefaultController>",
+        "[GET] => [/] => [api] ====> <DefaultController().api()>",
+        "                [api/] ===> [wsInfo] => <WebSocketController().info()>",
+        "                            [config] => <ConfigController()>",
+        "                [stream] => <WebSocketController().stream()>",
+        "                <DefaultController()>",
       }));
     }
 
