@@ -111,12 +111,15 @@ namespace Komejane.Server
 
     HttpListener server = null;
     List<WebSocket> clients = new List<WebSocket>(32);
+    Router router = new Router();
 
     private Http()
     {
       ClientConnection += Http_ClientConnection;
       ClientRequest += Http_ClientRequest;
       WebAPIRequest += Http_WebAPIRequest;
+
+      router.AddRoutes(Config.Instance.WebRoutes);
     }
 
     private void Http_WebAPIRequest(object sender, HttpRequestEventArgs e)
@@ -339,7 +342,8 @@ namespace Komejane.Server
         }
         catch (HttpListenerException) { break; } // 鯖停止時に例外くるからループ終了
         System.Diagnostics.Debug.WriteLine("Client connected");
-        OnClientConnection(new HttpClientEventArgs(context));
+
+        router.Routing(context.Request, context.Response);
       }
     }
     /* --------------------------------------------------------------------- */
