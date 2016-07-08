@@ -54,6 +54,7 @@
     </Compile>
     <Compile Include="FileUtility.cs" />
     <Compile Include="Server\DefaultController.cs" />
+    <Compile Include="Server\RouteNode.cs" />
     <Compile Include="Server\Router.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Komejane.cs" />
@@ -75,9 +76,8 @@
       <DependentUpon>LogForm.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <None Include="ClassDiagram1.cd" />
+    <Folder Include="Controller\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resource\web\index.html" />
