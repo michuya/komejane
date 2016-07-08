@@ -81,7 +81,7 @@ namespace Komejane.Server
       });
 
       // デフォルトコントローラにMIME辞書を登録
-      DefaultController dc = (DefaultController)AddController(DefaultController).ControllerInstance;
+      DefaultController dc = (DefaultController)RegistController(DefaultController).ControllerInstance;
       dc.MimeDictionary = Config.Instance.MimeFromExtentionDictionary;
     }
 
@@ -207,20 +207,12 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     #region ルーティング処理
     /* --------------------------------------------------------------------- */
-    public void Routing(HttpListenerRequest req, HttpListenerResponse res)
+    protected RouteControllerInfo GetRouteController(string httpMethod, Uri url)
     {
-      // ルーティングに存在しないメソッド叩いても404しか返さないよ！
-      if (!root.isContainer(req.HttpMethod.ToUpper()))
-      {
-        ResponseNotFound(res);
-        return;
-      }
-
-      // ルーティングを検索
       // TODO: コントローラ探索の仕様をもっと柔軟にする
-      RouteNode current = root[req.HttpMethod.ToUpper()];
+      RouteNode current = root[httpMethod.ToUpper()];
       RouteControllerInfo controller = DefaultController;
-      foreach(string dir in req.Url.Segments)
+      foreach (string dir in url.Segments)
       {
         if (current.isContainer(dir))
         {
@@ -236,6 +228,21 @@ namespace Komejane.Server
         }
       }
 
+      return controller;
+    }
+
+    public void Routing(HttpListenerRequest req, HttpListenerResponse res)
+    {
+      // ルーティングに存在しないメソッド叩いても404しか返さないよ！
+      if (!root.isContainer(req.HttpMethod.ToUpper()))
+      {
+        ResponseNotFound(res);
+        return;
+      }
+
+      // ルーティング情報からコントローラを取得
+      RouteControllerInfo controller = GetRouteController(req.HttpMethod, req.Url);
+
       // コントローラがうまく取得できなかった場合は強制404
       if (RouteControllerInfo.IsEmpty(controller))
       {
@@ -244,7 +251,7 @@ namespace Komejane.Server
       }
 
       // コントローラを呼び出す
-      ControllerWrapper wrapper = GetController(controller);
+      ControllerWrapper wrapper = GetControllerWrapper(controller);
 
       if (wrapper == null)
       {
@@ -257,6 +264,7 @@ namespace Komejane.Server
         wrapper.CallMethod(controller.Method, req, res);
 
       // 念のためストリームが閉じてなかったらクローズしとく
+      // 例外が起きるからリクエストを多数さばこうとした時にオーバーヘッドが大きい可能性有り
       try { if (res.OutputStream.CanWrite) res.Close(); }
       catch (ObjectDisposedException) { }
     }
@@ -267,7 +275,7 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     #region コントローラー関連
     /* --------------------------------------------------------------------- */
-    protected ControllerWrapper AddController(RouteControllerInfo controller)
+    protected ControllerWrapper RegistController(RouteControllerInfo controller)
     {
       try
       {
@@ -282,14 +290,14 @@ namespace Komejane.Server
       catch (ArgumentException) { return null; }
     }
 
-    protected ControllerWrapper GetController(RouteControllerInfo controller)
+    protected ControllerWrapper GetControllerWrapper(RouteControllerInfo controller)
     {
       if (RouteControllerInfo.IsEmpty(controller))
         return null;
 
       if (!Controllers.ContainsKey(controller.Name))
       {
-        if (AddController(controller) == null) return null;
+        if (RegistController(controller) == null) return null;
       }
 
       return Controllers[controller.Name];
