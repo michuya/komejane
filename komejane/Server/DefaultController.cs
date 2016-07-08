@@ -27,7 +27,7 @@ namespace Komejane.Server.Controller
     public override void index(HttpListenerRequest req, HttpListenerResponse res)
     {
       // リクエストのローカルパスを組み立て
-      string requestURI = Path.Combine(WebRootDirectory, req.Url.LocalPath.Substring(1).Replace('/', '\\'));
+      string requestURI = Path.Combine(WebRootDirectory, req.Url.AbsolutePath.Substring(1).Replace('/', '\\'));
       Logger.Debug("RequestURI: " + requestURI);
 
       // ディレクトリだった場合はインデックスのファイルを追加
