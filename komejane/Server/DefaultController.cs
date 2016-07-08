@@ -27,13 +27,13 @@ namespace Komejane.Server.Controller
     public override void index(HttpListenerRequest req, HttpListenerResponse res)
     {
       // リクエストのローカルパスを組み立て
-      string requestURI = Path.Combine(WebRootDirectory, req.Url.LocalPath);
+      string requestURI = Path.Combine(WebRootDirectory, req.Url.LocalPath.Substring(1).Replace('/', '\\'));
       Logger.Debug("RequestURI: " + requestURI);
 
       // ディレクトリだった場合はインデックスのファイルを追加
       if (Directory.Exists(requestURI))
       {
-        requestURI += "\\" + WebIndex;
+        requestURI = Path.Combine(requestURI, WebIndex);
 
         Logger.Debug("RequestURI(Append Index): " + requestURI);
       }
@@ -60,7 +60,7 @@ namespace Komejane.Server.Controller
     protected bool FileResponse(HttpListenerResponse res, string filepath)
     {
       // 指定したファイルがファイルじゃなかったら失敗
-      if (File.Exists(filepath)) return false;
+      if (!File.Exists(filepath)) return false;
 
       try
       {
