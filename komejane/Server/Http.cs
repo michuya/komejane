@@ -61,8 +61,6 @@ namespace Komejane.Server
     public event EventHandler ServerStop;
     public event EventHandler ServerError;
     public event EventHandler<HttpClientEventArgs> ClientConnection;
-    public event EventHandler<HttpRequestEventArgs> ClientRequest;
-    public event EventHandler<HttpRequestEventArgs> WebAPIRequest;
     public event EventHandler<HttpClientEventArgs> ClientDisconnected;
 
     private void OnServerStarted(EventArgs e)
@@ -85,16 +83,6 @@ namespace Komejane.Server
       if (ClientConnection != null)
         ClientConnection(this, e);
     }
-    private void OnClientRequest(HttpRequestEventArgs e)
-    {
-      if (ClientRequest != null)
-        ClientRequest(this, e);
-    }
-    private void OnWebAPIRequest(HttpRequestEventArgs e)
-    {
-      if (WebAPIRequest != null)
-        WebAPIRequest(this, e);
-    }
     private void OnClientDisconnection(HttpClientEventArgs e)
     {
       if (ClientDisconnected != null)
@@ -115,96 +103,7 @@ namespace Komejane.Server
 
     private Http()
     {
-      ClientConnection += Http_ClientConnection;
-      ClientRequest += Http_ClientRequest;
-      WebAPIRequest += Http_WebAPIRequest;
-
       router.AddRoutes(Config.Instance.WebRoutes);
-    }
-
-    private void Http_WebAPIRequest(object sender, HttpRequestEventArgs e)
-    {
-
-    }
-
-    private void Http_ClientRequest(object sender, HttpRequestEventArgs e)
-    {
-      HttpListenerRequest req = e.Request;
-      HttpListenerResponse res = e.Response;
-
-      // リクエストのローカルパスを組み立て
-      string requestURI = Path.Combine(Config.Instance.WebRootDirectory, req.Url.LocalPath);
-      if (!Path.IsPathRooted(requestURI)) { requestURI = Path.Combine(Config.Instance.DllDirectory, requestURI); }
-      Logger.Debug("RequestURI: " + requestURI);
-
-      // ディレクトリだった場合はインデックスのファイルを追加
-      if (Directory.Exists(requestURI))
-      {
-        requestURI += "\\" + Config.Instance.WebIndex;
-
-        Logger.Debug("RequestURI(Append Index): " + requestURI);
-      }
-
-      // ファイルが存在する場合はファイルを返す
-      if (File.Exists(requestURI))
-      {
-        FileInfo info = new FileInfo(requestURI);
-
-        string ext = info.Extension.ToLower().TrimStart(".".ToCharArray());
-
-        // MimeTypeを取得
-        var mimeDic = Config.Instance.MimeFromExtentionDictionary;
-        if (mimeDic.ContainsKey(ext))
-        {
-          res.ContentType = mimeDic[ext];
-          Logger.Trace("MimeType(fromExtention): " + res.ContentType);
-        }
-        else
-        {
-          res.ContentType = FileUtility.FindMimeFromFile(requestURI);
-          Logger.Trace("MimeType(fromFile): " + res.ContentType);
-        }
-
-        // ファイルサイズを設定
-        res.ContentLength64 = info.Length;
-
-        FileStream fs = new FileStream(requestURI, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        fs.CopyTo(res.OutputStream);
-        fs.Close();
-      }
-      else // なければ当然404
-      {
-        res.StatusCode = 404;
-      }
-    }
-
-    private async void Http_ClientConnection(object sender, HttpClientEventArgs e)
-    {
-      await Task.Run(() =>
-      {
-        HttpListenerRequest req = e.Context.Request;
-        HttpListenerResponse res = e.Context.Response;
-
-        // "/stream"でWebSocketを待ち受ける
-        if (req.IsWebSocketRequest && req.Url.AbsolutePath == "/stream")
-        {
-          // アクセスログ
-          Logger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " WebSocket/Connect\" " + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
-
-          WebSocketProc(e.Context);
-        }
-        else
-        {
-          if (req.Url.AbsolutePath.StartsWith("/api/"))
-            OnWebAPIRequest(new HttpRequestEventArgs(e.Context.Request, e.Context.Response));
-          else
-            OnClientRequest(new HttpRequestEventArgs(e.Context.Request, e.Context.Response));
-
-          // アクセスログ
-          Logger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " HTTP/" + req.ProtocolVersion + "\" " + res.StatusCode + " " + res.ContentLength64 + " \"" + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
-          e.Context.Response.Close();
-        }
-      });
     }
 
     private bool isServerRun
@@ -343,6 +242,7 @@ namespace Komejane.Server
         catch (HttpListenerException) { break; } // 鯖停止時に例外くるからループ終了
         System.Diagnostics.Debug.WriteLine("Client connected");
 
+        OnClientConnection(new HttpClientEventArgs(context));
         router.Routing(context.Request, context.Response);
       }
     }
