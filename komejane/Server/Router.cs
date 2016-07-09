@@ -231,8 +231,34 @@ namespace Komejane.Server
       return controller;
     }
 
-    public void Routing(HttpListenerRequest req, HttpListenerResponse res)
+    /// <summary>
+    /// コントローラを呼び出す
+    /// </summary>
+    /// <param name="controller">コントローラ情報</param>
+    /// <param name="context">接続してきたクライアントのコンテキスト</param>
+    protected void RunController(RouteControllerInfo controller, HttpListenerContext context)
     {
+      ControllerWrapper wrapper = GetControllerWrapper(controller);
+
+      if (wrapper == null)
+      {
+        ResponseServerError(context.Response);
+        return;
+      }
+      else
+      {
+        string method = "index";
+        if (!string.IsNullOrWhiteSpace(controller.Method))
+          method = controller.Method;
+        wrapper.CallMethod(method, context);
+      }
+    }
+
+    public void Routing(HttpListenerContext context)
+    {
+      HttpListenerRequest req = context.Request;
+      HttpListenerResponse res = context.Response;
+
       // ルーティングに存在しないメソッド叩いても404しか返さないよ！
       if (!root.isContainer(req.HttpMethod.ToUpper()))
       {
@@ -251,22 +277,7 @@ namespace Komejane.Server
       }
 
       // コントローラを呼び出す
-      ControllerWrapper wrapper = GetControllerWrapper(controller);
-
-      if (wrapper == null)
-      {
-        ResponseServerError(res);
-        return;
-      }
-      else if (string.IsNullOrWhiteSpace(controller.Method))
-        wrapper.CallMethod("index", req, res);
-      else
-        wrapper.CallMethod(controller.Method, req, res);
-
-      // 念のためストリームが閉じてなかったらクローズしとく
-      // 例外が起きるからリクエストを多数さばこうとした時にオーバーヘッドが大きい可能性有り
-      try { if (res.OutputStream.CanWrite) res.Close(); }
-      catch (ObjectDisposedException) { }
+      RunController(controller, context);
     }
     /* --------------------------------------------------------------------- */
     #endregion

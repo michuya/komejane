@@ -52,6 +52,7 @@
     <Compile Include="ControlForm.Designer.cs">
       <DependentUpon>ControlForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controller\WebSocketController.cs" />
     <Compile Include="FileUtility.cs" />
     <Compile Include="Server\DefaultController.cs" />
     <Compile Include="Server\RouteNode.cs" />
@@ -76,9 +77,7 @@
       <DependentUpon>LogForm.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Controller\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="Resource\web\index.html" />
     <EmbeddedResource Include="Resource\web\komejane.js" />

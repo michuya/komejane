@@ -48,7 +48,7 @@ namespace Komejane.Server.Controller
       }
     }
 
-    public void CallMethod(string method, HttpListenerRequest req, HttpListenerResponse res)
+    public void CallMethod(string method, HttpListenerContext context)
     {
       // コントローラが未設定の場合は処理しない
       if (ControllerInstance == null) return;
@@ -62,14 +62,14 @@ namespace Komejane.Server.Controller
         System.Reflection.MethodInfo mi = t.GetMethod(method);
 
         // メソッドを呼び出す
-        mi.Invoke(ControllerInstance, new object[] { req, res });
+        mi.Invoke(ControllerInstance, new object[] { context });
       }
     }
   }
 
   public interface IRouterController
   {
-    void index(HttpListenerRequest req, HttpListenerResponse res);
+    void index(HttpListenerContext context);
   }
 
   public abstract class BasicController : IRouterController
@@ -79,8 +79,11 @@ namespace Komejane.Server.Controller
 
     }
 
-    public virtual void index(HttpListenerRequest req, HttpListenerResponse res)
+    public virtual void index(HttpListenerContext context)
     {
+      HttpListenerRequest req = context.Request;
+      HttpListenerResponse res = context.Response;
+
       // アクセスログ
       Logger.Info(req.RemoteEndPoint.Address + " \"" + req.HttpMethod + " " + req.RawUrl + " HTTP/" + req.ProtocolVersion + "\" " + res.StatusCode + " " + res.ContentLength64 + " \"" + req.UrlReferrer + "\" \"" + req.UserAgent + "\"");
 

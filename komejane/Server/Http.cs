@@ -143,6 +143,7 @@ namespace Komejane.Server
     {
       Config conf = Config.Instance;
 
+      // TODO: ホストが+や*や0.0.0.0の場合に自身のIPアドレスを表示させる
       string prefix = "http://" + conf.ListenHost + ":" + conf.Port + "/";
 
       if (server == null)
@@ -158,7 +159,16 @@ namespace Komejane.Server
         System.Diagnostics.Debug.WriteLine(ex.ToString());
         OnServerError(new HttpExceptionEventArgs(ex));
       }
-      server.Start();
+
+      try
+      {
+        server.Start();
+      }
+      catch (HttpListenerException)
+      {
+        // TODO: アクセス制限が発生した場合に解消するヒントを表示
+        return;
+      }
 
       await Task.Run(() =>
       {
@@ -243,7 +253,7 @@ namespace Komejane.Server
         System.Diagnostics.Debug.WriteLine("Client connected");
 
         OnClientConnection(new HttpClientEventArgs(context));
-        router.Routing(context.Request, context.Response);
+        router.Routing(context);
       }
     }
     /* --------------------------------------------------------------------- */

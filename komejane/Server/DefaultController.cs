@@ -24,8 +24,11 @@ namespace Komejane.Server.Controller
       WebIndex = webindex;
     }
 
-    public override void index(HttpListenerRequest req, HttpListenerResponse res)
+    public override void index(HttpListenerContext context)
     {
+      HttpListenerRequest req = context.Request;
+      HttpListenerResponse res = context.Response;
+
       // リクエストのローカルパスを組み立て
       string requestURI = Path.Combine(WebRootDirectory, req.Url.AbsolutePath.Substring(1).Replace('/', '\\'));
       Logger.Debug("RequestURI: " + requestURI);
@@ -54,7 +57,7 @@ namespace Komejane.Server.Controller
       }
 
       // ストリームの最後の処理はBasicControllerに任せる
-      base.index(req, res);
+      base.index(context);
     }
 
     protected bool FileResponse(HttpListenerResponse res, string filepath)
