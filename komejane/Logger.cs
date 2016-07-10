@@ -169,15 +169,27 @@ namespace Komejane
       Logger logger = Logger.Instance;
       logger.writeLine(LogLevel.INFO, message);
     }
+    public static void Info(string format, params string[] args)
+    {
+      Info(string.Format(format, args));
+    }
     public static void Debug(string message)
     {
       Logger logger = Logger.Instance;
       logger.writeLine(LogLevel.DEBUG, message);
     }
+    public static void Debug(string format, params string[] args)
+    {
+      Debug(string.Format(format, args));
+    }
     public static void Trace(string message)
     {
       Logger logger = Logger.Instance;
       logger.writeLine(LogLevel.TRACE, message);
+    }
+    public static void Trace(string format, params string[] args)
+    {
+      Trace(string.Format(format, args));
     }
     public static void WriteLine(LogLevel level, string message)
     {
