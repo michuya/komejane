@@ -48,12 +48,13 @@ namespace Komejane.Server.Controller
 
     public async void stream(HttpListenerContext context)
     {
-      var ws = (await context.AcceptWebSocketAsync(null)).WebSocket;
+      var wsContext = await context.AcceptWebSocketAsync(null);
+      var ws = wsContext.WebSocket;
 
       // 新規クライアントを追加
       _client.Add(ws);
 
-      await Task.Delay(1000);
+      Logger.Info("{0}:Session Start:{1}", DateTime.Now.ToString(), context.Request.RemoteEndPoint.Address.ToString());
 
       // WebSocketの送受信ループ
       while (ws.State == WebSocketState.Open)
@@ -69,20 +70,20 @@ namespace Komejane.Server.Controller
           if (ret.MessageType == WebSocketMessageType.Text)
           {
             string msg = Encoding.UTF8.GetString(buff.Take(ret.Count).ToArray());
-            Logger.Trace(string.Format("WSMessage: {0}", msg));
+            Logger.Trace("{0}:WSMessage:{1}", context.Request.RemoteEndPoint.Address.ToString(), msg);
 
             wsMessageProc(ws, msg);
           }
           else if (ret.MessageType == WebSocketMessageType.Close) /// クローズ
           {
-            Logger.Info(string.Format("{0}:Session Close:{1}", DateTime.Now.ToString(), context.Request.RemoteEndPoint.Address.ToString()));
+            Logger.Info("{0}:Session Close:{1}", DateTime.Now.ToString(), context.Request.RemoteEndPoint.Address.ToString());
             break;
           }
         }
-        catch
+        catch (WebSocketException)
         {
           // 例外 クライアントが異常終了しやがった
-          Logger.Info(string.Format("{0}:Session Abort:{1}", DateTime.Now.ToString(), context.Request.RemoteEndPoint.Address.ToString()));
+          Logger.Info("{0}:Session Abort:{1}", DateTime.Now.ToString(), context.Request.RemoteEndPoint.Address.ToString());
           break;
         }
       }
