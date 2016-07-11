@@ -12,7 +12,7 @@ namespace Komejane.Server.Controller
   {
     static List<WebSocket> _client = new List<WebSocket>();
 
-    static WebSocket[] WSClinets { get { return _client.ToArray(); } }
+    public static WebSocket[] WSClinets { get { return _client.ToArray(); } }
 
     public void info(HttpListenerContext context)
     {
