@@ -262,42 +262,8 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
 
     /* --------------------------------------------------------------------- */
-    #region WebSocketAPIコネクション
+    #region WebSocket関連
     /* --------------------------------------------------------------------- */
-    private async void WebSocketProc(HttpListenerContext context)
-    {
-      var wscon = await context.AcceptWebSocketAsync(null);
-      var ws = wscon.WebSocket;
-
-      clients.Add(ws);
-
-      while (ws.State == WebSocketState.Open)
-      {
-        try
-        {
-          var buff = new ArraySegment<byte>(new byte[1024]);
-
-          // 受信待機
-          var ret = await ws.ReceiveAsync(buff, System.Threading.CancellationToken.None);
-
-          if (ret.MessageType == WebSocketMessageType.Text)
-          {
-            // なんか受信する物あるっけ？エラーとか？
-          }
-          else if (ret.MessageType == WebSocketMessageType.Close) /// クローズ
-          {
-            break;
-          }
-        }
-        catch
-        {
-          break;
-        }
-      }
-
-      clients.Remove(ws);
-      ws.Dispose();
-    }
     /* --------------------------------------------------------------------- */
     #endregion
     /* --------------------------------------------------------------------- */
