@@ -166,6 +166,7 @@ namespace Komejane.Server
       }
       catch (HttpListenerException)
       {
+        server = null;
         // TODO: アクセス制限が発生した場合に解消するヒントを表示
         return;
       }
