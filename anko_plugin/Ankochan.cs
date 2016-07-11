@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using ankoPlugin2;
-using UserType = Komejane.Komejane.UserType;
+using UserType = Komejane.CommentData.UserType;
 
 namespace anko_plugin
 {
@@ -76,15 +76,15 @@ namespace anko_plugin
       else if (user != null && user.isMember) type = UserType.Member;
       else type = UserType.Normal;
 
-      komejane.AddComment(
-        type,
+      komejane.AddComment(new Komejane.CommentData(
         chat.No,
+        chat.Message,
+        type,
         chat.UserId,
         chat.NickName,
-        chat.Message,
         chat.Anonymity,
         chat.Premium
-      );
+      ));
     }
 
     private void _host_ReceiveChat(object sender, ReceiveChatEventArgs e)

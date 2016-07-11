@@ -15,15 +15,7 @@ namespace Komejane
     /* --------------------------------------------------------------------- */
     #region プラグイン定数とかステータスとか
     /* --------------------------------------------------------------------- */
-    public enum UserType
-    {
-      Caster,
-      Owner,
-      Bsp,
-      Member,
-      Normal,
-      System
-    }
+
 
     static public String Version
     {
@@ -138,14 +130,14 @@ namespace Komejane
       Http server = Http.Instance;
     }
 
-    public async void AddComment(UserType type, int commentNo, string userId, string charaName, string comment, bool isAnonymous, int premium)
+    public async void AddComment(CommentData comment)
     {
-      if (comment.StartsWith("/")) return;
+      if (comment.IsCommand) return;
 
-      string cstr = "[" + commentNo + ":" + charaName + "] " + comment + " // Type:" + type + ((isAnonymous) ? "(184)" : (premium > 0) ? "(" + premium + ")" : "");
+      
       await Task.Run(() =>
       {
-        Logger.Trace(cstr);
+        Logger.Trace(comment.ToString());
       });
     }
   }

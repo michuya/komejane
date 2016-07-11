@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Plugin;
-using UserType = Komejane.Komejane.UserType;
+using UserType = Komejane.CommentData.UserType;
 
 namespace ncv_plugin
 {
@@ -87,15 +87,15 @@ namespace ncv_plugin
           int commentNo = -1;
           try { commentNo = int.Parse(Chat.No); } catch(Exception ex) { Komejane.Logger.Debug(ex.ToString()); commentNo = -1; }
 
-          komejane.AddComment(
-            type,
+          komejane.AddComment(new Komejane.CommentData(
             commentNo,
+            Chat.Comment,
+            type,
             Chat.UserId,
             Chat.Name,
-            Chat.Comment,
             Chat.IsAnonymity,
             Chat.Premium
-          );
+          ));
         }
       } catch (Exception ex)
       {
