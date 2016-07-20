@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.IO;
 
 namespace Komejane
 {
+  [DataContract]
   public class CommentData
   {
     public enum UserType
@@ -38,18 +42,30 @@ namespace Komejane
     /// <summary>
     /// コマンド文か否か
     /// </summary>
-    public bool IsCommand { get { return _comment.StartsWith("/"); } }
+    public bool IsCommand { get { return Comment.StartsWith("/"); } }
 
+    [DataMember]
     public UserType Type { get; set; } = _type;
+    [DataMember]
     public int CommentNo { get; set; } = _commentNo;
+    [DataMember]
     public string Comment { get; set; } = _comment;
+    [DataMember]
     public string UserId { get; set; } = _userId;
+    [DataMember]
     public string CharaName { get; set; } = _charaName;
+    [DataMember]
     bool IsAnonymous { get; set; } = _isAnonymous;
+    [DataMember]
     int Premium { get; set; } = _premium;
 
     public bool IsDefaultName { get { return string.IsNullOrWhiteSpace(CharaName); } }
-    public string Name { get { return (IsDefaultName) ? Config.Instance.DefaultName : CharaName; } }
+    [DataMember]
+    public string Name
+    {
+      get { return (IsDefaultName) ? Config.Instance.DefaultName : CharaName; }
+      private set { } // dummy setter
+    }
 
     /* --------------------------------------------------------------------- */
     #endregion
@@ -69,6 +85,16 @@ namespace Komejane
     public override string ToString()
     {
       return "[" + CommentNo + ":" + CharaName + "] " + Comment + " // Type:" + Type + ((IsAnonymous) ? "(184)" : (Premium > 0) ? "(" + Premium + ")" : "");
+    }
+    public string ToJson()
+    {
+      var serializer = new DataContractJsonSerializer(typeof(CommentData));
+
+      var mstream = new MemoryStream();
+
+      serializer.WriteObject(mstream, this);
+
+      return Encoding.UTF8.GetString(mstream.ToArray());
     }
   }
 }
