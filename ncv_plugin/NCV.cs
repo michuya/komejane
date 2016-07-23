@@ -61,11 +61,12 @@ namespace ncv_plugin
     public void AutoRun()
     {
       // TODO: 鯖インスタンスをサイレント起動
+      Run();
     }
 
     public void Run()
     {
-      Komejane.Logger.Debug("test");
+      komejane.Initialize();
 
       // TODO: 鯖インスタンスを起動
       komejane.WindowOwner = _host.MainForm;
