@@ -37,6 +37,7 @@ namespace KomejaneUserTest
         while (!CanceledGenComment)
         {
           var comment = new Komejane.CommentData(cid++, Faker.Lorem.Sentence());
+          if (rand.Next(7) == 0) comment.CharaName = Faker.Name.First();
           Console.WriteLine("GenComment => " + comment);
 
           komejane.AddComment(comment);
