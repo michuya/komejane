@@ -83,7 +83,7 @@ namespace anko_plugin
         chat.Message,
         type,
         chat.UserId,
-        chat.NickName,
+        (chat.userinfo != null) ? chat.userinfo.CharaName : "", // userinfo.Charnameがコテハン、userinfo.DisplayNameがアカウント表示名
         chat.Anonymity,
         chat.Premium
       ));
