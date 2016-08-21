@@ -37,6 +37,8 @@ namespace Komejane
       get { return Http.isRun; }
     }
 
+    static public bool Initialized { get; protected set; } = false;
+
     /* --------------------------------------------------------------------- */
     #endregion
     /* --------------------------------------------------------------------- */
@@ -88,7 +90,13 @@ namespace Komejane
 
     public void Initialize()
     {
+      // 初期化完了フラグが立ってた場合は無視
+      if (Initialized) return;
+
       InitializeWebDirectory();
+
+      // 初期化完了フラグを立てる
+      Initialized = true;
     }
 
     public bool IsAlive { get; protected set; }
