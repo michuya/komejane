@@ -146,6 +146,8 @@ namespace Komejane
       await Task.Run(() =>
       {
         Logger.Trace(comment.ToString());
+
+        if (Http.isRun) Http.Instance.SendComment(comment);
       });
     }
   }

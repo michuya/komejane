@@ -10,9 +10,26 @@ namespace Komejane.Server.Controller
 {
   class WebSocketController : BasicController
   {
-    static List<WebSocket> _client = new List<WebSocket>();
+    static List<WebSocket> clients = new List<WebSocket>();
 
-    public static WebSocket[] WSClinets { get { return _client.ToArray(); } }
+    public static WebSocket[] WSClinets { get { return clients.ToArray(); } }
+
+    public static async void sendMessageAllClient(string msg)
+    {
+      await Task.Run(() => {
+        clients.ForEach((ws) => sendMessageToClient(ws, msg));
+      });
+    }
+
+    protected static void sendMessageToClient(WebSocket client, string msg)
+    {
+      ArraySegment<byte> buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg));
+
+      lock (client)
+      {
+        client.SendAsync(buffer, WebSocketMessageType.Text, true, System.Threading.CancellationToken.None);
+      }
+    }
 
     public void info(HttpListenerContext context)
     {
@@ -26,12 +43,6 @@ namespace Komejane.Server.Controller
       base.index(context);
     }
 
-    protected void sendMessageToClient(WebSocket client, string msg)
-    {
-      ArraySegment<byte> buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg));
-
-      client.SendAsync(buffer, WebSocketMessageType.Text, true, System.Threading.CancellationToken.None);
-    }
 
     protected async void wsMessageProc(WebSocket client, string msg)
     {
@@ -52,7 +63,7 @@ namespace Komejane.Server.Controller
       var ws = wsContext.WebSocket;
 
       // 新規クライアントを追加
-      _client.Add(ws);
+      clients.Add(ws);
 
       Logger.Info("{0}:Session Start:{1}", DateTime.Now.ToString(), context.Request.RemoteEndPoint.Address.ToString());
 
@@ -89,7 +100,7 @@ namespace Komejane.Server.Controller
       }
 
       // クライアントを切断
-      _client.Remove(ws);
+      clients.Remove(ws);
       ws.Dispose();
     }
 

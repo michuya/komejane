@@ -264,6 +264,10 @@ namespace Komejane.Server
     /* --------------------------------------------------------------------- */
     #region WebSocket関連
     /* --------------------------------------------------------------------- */
+    public void SendComment(CommentData comment)
+    {
+      Controller.WebSocketController.sendMessageAllClient(comment.ToJson());
+    }
     /* --------------------------------------------------------------------- */
     #endregion
     /* --------------------------------------------------------------------- */
