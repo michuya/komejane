@@ -52,7 +52,6 @@ namespace Komejane
     public string Comment { get; set; } = _comment;
     [DataMember]
     public string UserId { get; set; } = _userId;
-    [DataMember]
     public string CharaName { get; set; } = _charaName;
     [DataMember]
     bool IsAnonymous { get; set; } = _isAnonymous;
