@@ -6,28 +6,46 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 
+using AsyncLock=Komejane.Util.AsyncLock;
+
 namespace Komejane.Server.Controller
 {
   class WebSocketController : BasicController
   {
-    static List<WebSocket> clients = new List<WebSocket>();
+    public class WSClientData: IDisposable
+    {
+      public WebSocket sock;
+      public AsyncLock lockObj;
 
-    public static WebSocket[] WSClinets { get { return clients.ToArray(); } }
+      public WSClientData(WebSocket ws)
+      {
+        this.sock = ws;
+        this.lockObj = new AsyncLock();
+      }
+      public void Dispose()
+      {
+        sock.Dispose();
+      }
+    }
+
+    static List<WSClientData> clients = new List<WSClientData>();
+
+    public static WebSocket[] WSClinets { get { return clients.Select((cs) => cs.sock).ToArray(); } }
 
     public static async void sendMessageAllClient(string msg)
     {
       await Task.Run(() => {
-        clients.ForEach((ws) => sendMessageToClient(ws, msg));
+        clients.ForEach((cs) => sendMessageToClient(cs, msg));
       });
     }
 
-    protected static void sendMessageToClient(WebSocket client, string msg)
+    protected static async void sendMessageToClient(WSClientData client, string msg)
     {
       ArraySegment<byte> buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg));
 
-      lock (client)
+      using (await client.lockObj.LockAsync())
       {
-        client.SendAsync(buffer, WebSocketMessageType.Text, true, System.Threading.CancellationToken.None);
+        await client.sock.SendAsync(buffer, WebSocketMessageType.Text, true, System.Threading.CancellationToken.None);
       }
     }
 
@@ -44,7 +62,7 @@ namespace Komejane.Server.Controller
     }
 
 
-    protected async void wsMessageProc(WebSocket client, string msg)
+    protected async void wsMessageProc(WSClientData client, string msg)
     {
       await Task.Run(() =>
       {
@@ -62,8 +80,10 @@ namespace Komejane.Server.Controller
       var wsContext = await context.AcceptWebSocketAsync(null);
       var ws = wsContext.WebSocket;
 
+      WSClientData cs = new WSClientData(ws);
+
       // 新規クライアントを追加
-      clients.Add(ws);
+      clients.Add(cs);
 
       Logger.Info("{0}:Session Start:{1}", DateTime.Now.ToString(), context.Request.RemoteEndPoint.Address.ToString());
 
@@ -83,7 +103,7 @@ namespace Komejane.Server.Controller
             string msg = Encoding.UTF8.GetString(buff.Take(ret.Count).ToArray());
             Logger.Trace("{0}:WSMessage:{1}", context.Request.RemoteEndPoint.Address.ToString(), msg);
 
-            wsMessageProc(ws, msg);
+            wsMessageProc(cs, msg);
           }
           else if (ret.MessageType == WebSocketMessageType.Close) /// クローズ
           {
@@ -100,8 +120,8 @@ namespace Komejane.Server.Controller
       }
 
       // クライアントを切断
-      clients.Remove(ws);
-      ws.Dispose();
+      clients.Remove(cs);
+      cs.Dispose();
     }
 
     public override void index(HttpListenerContext context)
