@@ -247,3 +247,8 @@ ModelManifest.xml
 # NoCommit CommentViewer Library
 /lib/NicoViewer/*.dll
 /lib/NiconamaCommentViewer/*.dll
+
+# Frontend Build
+/websrc/node_modules
+/websrc/.vscode
+/websrc/.cache

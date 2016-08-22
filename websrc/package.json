@@ -1,0 +1,22 @@
+{
+  "name": "komejane-web",
+  "version": "0.0.1",
+  "description": "こめじゃねフロント用",
+  "main": "src/index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "babel-loader": "^6.2.5",
+    "babel-preset-es2015": "^6.13.2",
+    "babel-preset-react": "^6.11.1",
+    "babel-preset-stage-3": "^6.11.0",
+    "webpack": "^1.13.2",
+    "webpack-dev-server": "^1.15.0"
+  },
+  "scripts": {
+    "watch": "webpack-dev-server",
+    "dev-server": "webpack-dev-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": ""
+}
